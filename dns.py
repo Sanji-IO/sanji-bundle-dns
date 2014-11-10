@@ -10,6 +10,8 @@ from sanji.connection.mqtt import Mqtt
 
 logger = logging.getLogger()
 
+dns_config_path = "/etc/resolv.conf"
+
 
 class Dns(Sanji):
 
@@ -19,22 +21,37 @@ class Dns(Sanji):
 
     @Route(methods="get", resource="/network/dns")
     def get(self, message, response):
-        return response(data={"enable": self.model.db["enable"]})
+        return response(data=self.model.db)
 
     @Route(methods="put", resource="/network/dns")
     def put(self, message, response):
-        if hasattr(message, "data") and "enable" in message.data:
-            # TODO: assign message data to self.model.db
-            # save db
-            # self.model.save_db()
+        if hasattr(message, "data"):
+            # assign message data to self.model.db
+            self.model.db["dns"] = message.data["dns"]
+            self.model.save_db()
             # generate config
-            # self.update_config()
-            return response(code=self.rsp["code"], data=self.rsp["data"])
+            update_rc = self.update_config()
+            if update_rc is False:
+                return response(code=400, data={"message":
+                                                "update config error"})
+            return response(data=self.model.db)
         return response(code=400, data={"message": "Invaild Input"})
 
     def update_config(self):
-        # update config to /etc/resolv.conf
-        pass
+        try:
+            # generate config string
+            conf_str = ""
+            for server in self.model.db["dns"]:
+                print server
+                conf_str = conf_str + ("nameserver %s\n" % server)
+            # save config string to /etc/resolv.conf
+            with open(dns_config_path, "w") as f:
+                f.write(conf_str)
+            logger.info("dns config is updated")
+            return True
+        except Exception as e:
+            logger.debug("update config file error:%s" % e)
+            return False
 
 if __name__ == '__main__':
     FORMAT = '%(asctime)s - %(levelname)s - %(lineno)s - %(message)s'
