@@ -42,7 +42,6 @@ class Dns(Sanji):
             # generate config string
             conf_str = ""
             for server in self.model.db["dns"]:
-                print server
                 conf_str = conf_str + ("nameserver %s\n" % server)
             # save config string to /etc/resolv.conf
             with open(dns_config_path, "w") as f:
