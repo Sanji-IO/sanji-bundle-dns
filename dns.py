@@ -10,14 +10,13 @@ from sanji.connection.mqtt import Mqtt
 
 logger = logging.getLogger()
 
-dns_config_path = "/etc/resolv.conf"
-
 
 class Dns(Sanji):
 
     def init(self, *args, **kwargs):
         path_root = os.path.abspath(os.path.dirname(__file__))
         self.model = ModelInitiator("dns", path_root, backup_interval=1)
+        self.dns_config_path = "/etc/resolv.conf"
 
     @Route(methods="get", resource="/network/dns")
     def get(self, message, response):
@@ -44,7 +43,7 @@ class Dns(Sanji):
             for server in self.model.db["dns"]:
                 conf_str = conf_str + ("nameserver %s\n" % server)
             # save config string to /etc/resolv.conf
-            with open(dns_config_path, "w") as f:
+            with open(self.dns_config_path, "w") as f:
                 f.write(conf_str)
             logger.info("dns config is updated")
             return True
