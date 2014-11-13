@@ -64,18 +64,19 @@ class TestDnsClass(unittest.TestCase):
 
     def test_update_config(self):
         self.dns.model.db = {"dns": ["1.1.1.1", "2.2.2.2"]}
+        conf_str = "nameserver 1.1.1.1\n" + "nameserver 2.2.2.2\n"
         # patch open
         m = mock_open()
         with patch("dns.open", m, create=True) as f:
             # case 1: update_config=True
             update_config_rc = self.dns.update_config()
             self.assertEqual(update_config_rc, True)
+            f.return_value.write.assert_called_once_with(conf_str)
 
             # case 2: update_config=False
             f.side_effect = Exception("error exception!")
             update_config_rc = self.dns.update_config()
             self.assertEqual(update_config_rc, False)
-
 
 if __name__ == "__main__":
     unittest.main()
