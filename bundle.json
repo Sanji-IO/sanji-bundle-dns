@@ -1,0 +1,22 @@
+{
+  "name": "dns",
+  "version": "1.0",
+  "author": "Jordan Chen",
+  "email": "jordan.chen@moxa.com",
+  "description": "Handle the dns settings.",
+  "license": "MOXA",
+  "main": "dns.py",
+  "argument": "",
+  "priority": 55,
+  "hook": [],
+  "dependencies": {},
+  "repository": "",
+  "role": "model",
+  "ttl": 10,
+  "resources": [
+    {
+   "methods": ["get", "put"],
+   "resource": "/network/dns"
+    }
+  ]
+}
