@@ -48,7 +48,7 @@ class Dns(Sanji):
             logger.info("dns config is updated")
             return True
         except Exception as e:
-            logger.debug("update config file error:%s" % e)
+            logger.info("update config file error:%s" % e)
             return False
 
     def generate_config(self):
@@ -58,21 +58,17 @@ class Dns(Sanji):
         return conf_str
 
     def write_config(self, conf_str):
-        try:
-            with open(Dns.CONFIG_PATH, "w") as f:
-                f.write(conf_str)
-                f.close()
-        except Exception as e:
-            raise e
+        with open(Dns.CONFIG_PATH, "w") as f:
+            f.write(conf_str)
+            f.close()
 
 
 def main():
-    FORMAT = '%(asctime)s - %(levelname)s - %(lineno)s - %(message)s'
-    logging.basicConfig(level=0, format=FORMAT)
-
     dns = Dns(connection=Mqtt())
     dns.start()
 
 if __name__ == '__main__':
+    FORMAT = '%(asctime)s - %(levelname)s - %(lineno)s - %(message)s'
+    logging.basicConfig(level=0, format=FORMAT)
     logger = logging.getLogger("dns")
     main()
