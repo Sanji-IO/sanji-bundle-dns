@@ -60,7 +60,6 @@ class Dns(Sanji):
     def write_config(self, conf_str):
         with open(Dns.CONFIG_PATH, "w") as f:
             f.write(conf_str)
-            f.close()
 
 
 def main():
