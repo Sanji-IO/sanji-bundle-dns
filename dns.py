@@ -21,14 +21,14 @@ class Dns(Sanji):
 
     @Route(methods="get", resource="/network/dns")
     def get(self, message, response):
-        self.do_get(message, response)
+        return self.do_get(message, response)
 
     def do_get(self, message, response):
         return response(data=self.model.db)
 
     @Route(methods="put", resource="/network/dns")
     def put(self, message, response):
-        self.do_put(message, response)
+        return self.do_put(message, response)
 
     def do_put(self, message, response):
         if not(hasattr(message, "data")):
