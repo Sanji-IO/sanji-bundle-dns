@@ -39,10 +39,10 @@ class TestDnsClass(unittest.TestCase):
 
         # act
         Dns.do_get(self.dns, message=None, response=mock_fun)
-        check_data = [({"data": self.dns.model.db},)]
 
         # assert
-        self.assertEqual(mock_fun.call_args_list, check_data)
+        self.assertEqual(mock_fun.call_args_list[0][1]["data"], self.dns.model.db)
+        self.assertEqual(len(mock_fun.call_args_list), 1)
 
     @patch("dns.Dns.update_config")
     def test_do_put_without_data_should_return_code_400(self, update_config):
@@ -50,27 +50,27 @@ class TestDnsClass(unittest.TestCase):
         # arrange
         message = Message({})
         mock_fun = Mock(code=200, data=None)
-        check_data = [({"code": 400, "data": {"message": "Invalid Input"}},)]
 
         # act
         Dns.do_put(self.dns, message=message, response=mock_fun)
 
         # assert
-        self.assertEqual(mock_fun.call_args_list, check_data)
+        self.assertEqual(mock_fun.call_args_list[0][1]["code"], 400)
+        self.assertEqual(len(mock_fun.call_args_list), 1)
 
     @patch("dns.Dns.update_config")
     def test_do_put_with_invalid_data_should_return_code_400(self, update_config):
-        
+
         # arrange
         message = Message({"data": {"dns": "invalid data"}})
         mock_fun = Mock(code=200, data=None)
-        check_data = [({"code": 400, "data": {"message": "Invalid Data"}},)]
 
         # act
         Dns.do_put(self.dns, message=message, response=mock_fun)
 
         # assert
-        self.assertEqual(mock_fun.call_args_list, check_data)
+        self.assertEqual(mock_fun.call_args_list[0][1]["code"], 400)
+        self.assertEqual(len(mock_fun.call_args_list), 1)
 
     @patch("dns.Dns.update_config")
     def test_do_put_with_update_config_failed_should_return_code_400(self, update_config):
@@ -79,28 +79,28 @@ class TestDnsClass(unittest.TestCase):
         message = Message({"data": {"dns": ["1.1.1.1", "2.2.2.2"]}})
         update_config.return_value = False
         mock_fun = Mock(code=200, data=None)
-        check_data = [({"code": 400, "data": {"message":
-                                              "update config error"}},)]
+
         # act
         Dns.do_put(self.dns, message=message, response=mock_fun)
 
         # assert
-        self.assertEqual(mock_fun.call_args_list, check_data)
+        self.assertEqual(mock_fun.call_args_list[0][1]["code"], 400)
+        self.assertEqual(len(mock_fun.call_args_list), 1)
 
     @patch("dns.Dns.update_config")
     def test_do_put_with_update_config_success_should_return_code_200(self, update_config):
+
         # arrange
         self.dns.model.db = {"dns": ["1.1.1.1", "2.2.2.2"]}
         message = Message({"data": self.dns.model.db})
         update_config.return_value = True
         mock_fun = Mock(code=400, data=None)
-        check_data = [({"data": self.dns.model.db},)]
 
         # act
         Dns.do_put(self.dns, message=message, response=mock_fun)
 
         # assert
-        self.assertEqual(mock_fun.call_args_list, check_data)
+        self.assertEqual(mock_fun.call_args_list[0][1]["data"], self.dns.model.db)
 
     @patch("dns.Dns.write_config")
     @patch("dns.Dns.generate_config")
