@@ -39,9 +39,9 @@ class TestDnsClass(unittest.TestCase):
 
         # act
         Dns.do_get(self.dns, message=None, response=mock_fun)
-
+        print(mock_fun.call_args_list)
         # assert
-        self.assertEqual(mock_fun.call_args_list[0][1]["data"], self.dns.model.db)
+        self.assertEqual(mock_fun.call_args_list[0][1]["data"], {"dns": ["1.1.1.1", "2.2.2.2"]})
         self.assertEqual(len(mock_fun.call_args_list), 1)
 
     @patch("dns.Dns.update_config")
@@ -100,7 +100,7 @@ class TestDnsClass(unittest.TestCase):
         Dns.do_put(self.dns, message=message, response=mock_fun)
 
         # assert
-        self.assertEqual(mock_fun.call_args_list[0][1]["data"], self.dns.model.db)
+        self.assertEqual(mock_fun.call_args_list[0][1]["data"], {"dns": ["1.1.1.1", "2.2.2.2"]})
 
     @patch("dns.Dns.write_config")
     @patch("dns.Dns.generate_config")
