@@ -32,9 +32,11 @@ class Dns(Sanji):
 
     def do_put(self, message, response):
         if not(hasattr(message, "data")):
+            logger.debug("Invalid Input")
             return response(code=400, data={"message": "Invalid Input"})
 
         if not(isinstance(message.data["dns"], list)):
+            logger.debug("Invalid Data")
             return response(code=400, data={"message": "Invalid Data"})
         self.model.db["dns"] = message.data["dns"]
         self.model.save_db()
