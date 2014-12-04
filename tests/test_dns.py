@@ -39,13 +39,12 @@ class TestDnsClass(unittest.TestCase):
 
         # act
         Dns.do_get(self.dns, message=None, response=mock_fun)
-        print(mock_fun.call_args_list)
+
         # assert
         self.assertEqual(mock_fun.call_args_list[0][1]["data"], {"dns": ["1.1.1.1", "2.2.2.2"]})
         self.assertEqual(len(mock_fun.call_args_list), 1)
 
-    @patch("dns.Dns.update_config")
-    def test_do_put_without_data_should_return_code_400(self, update_config):
+    def test_do_put_without_data_should_return_code_400(self):
 
         # arrange
         message = Message({})
@@ -58,8 +57,7 @@ class TestDnsClass(unittest.TestCase):
         self.assertEqual(mock_fun.call_args_list[0][1]["code"], 400)
         self.assertEqual(len(mock_fun.call_args_list), 1)
 
-    @patch("dns.Dns.update_config")
-    def test_do_put_with_invalid_data_should_return_code_400(self, update_config):
+    def test_do_put_with_invalid_data_should_return_code_400(self):
 
         # arrange
         message = Message({"data": {"dns": "invalid data"}})
@@ -77,7 +75,7 @@ class TestDnsClass(unittest.TestCase):
 
         # arrange
         message = Message({"data": {"dns": ["1.1.1.1", "2.2.2.2"]}})
-        update_config.return_value = False
+        update_config.side_effect = Exception("update config exception")
         mock_fun = Mock(code=200, data=None)
 
         # act
@@ -93,7 +91,7 @@ class TestDnsClass(unittest.TestCase):
         # arrange
         self.dns.model.db = {"dns": ["1.1.1.1", "2.2.2.2"]}
         message = Message({"data": self.dns.model.db})
-        update_config.return_value = True
+        update_config.return_value = None
         mock_fun = Mock(code=400, data=None)
 
         # act
@@ -101,34 +99,21 @@ class TestDnsClass(unittest.TestCase):
 
         # assert
         self.assertEqual(mock_fun.call_args_list[0][1]["data"], {"dns": ["1.1.1.1", "2.2.2.2"]})
+        self.assertEqual(len(mock_fun.call_args_list), 1)
 
     @patch("dns.Dns.write_config")
     @patch("dns.Dns.generate_config")
-    def test_update_config_with_write_config_success_should_return_True(self, generate_config, write_config):
+    def test_update_config_with_write_config_should_be_called_once(self, generate_config, write_config):
 
         # arrange
         generate_config.return_value = "nameserver 1.1.1.1\n" + \
                                        "nameserver 2.2.2.2\n"
         # act
-        rc = self.dns.update_config()
+        self.dns.update_config()
 
         # assert
-        self.assertEqual(rc, True)
-
-    @patch("dns.Dns.write_config")
-    @patch("dns.Dns.generate_config")
-    def test_update_config_with_write_config_failed_should_return_False(self, generate_config, write_config):
-
-        #arrange
-        generate_config.return_value = "nameserver 1.1.1.1\n" + \
-                                       "nameserver 2.2.2.2\n"
-        write_config.side_effect = Exception("error exception!")
-
-        # act
-        rc = self.dns.update_config()
-
-        # assert
-        self.assertEqual(rc, False)
+        write_config.assert_called_once_with("nameserver 1.1.1.1\n" + \
+                                             "nameserver 2.2.2.2\n")
 
     def test_generate_config_should_return_config_string(self):
 

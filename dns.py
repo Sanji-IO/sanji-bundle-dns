@@ -33,29 +33,28 @@ class Dns(Sanji):
     def do_put(self, message, response):
         if not(hasattr(message, "data")):
             return response(code=400, data={"message": "Invalid Input"})
-        # assign message data to self.model.db
+
         if not(isinstance(message.data["dns"], list)):
             return response(code=400, data={"message": "Invalid Data"})
         self.model.db["dns"] = message.data["dns"]
         self.model.save_db()
-        # generate config
-        update_rc = self.update_config()
-        if update_rc is False:
+
+        try:
+            self.update_config()
+            logger.info("update dns config success")
+        except Exception as e:
+            logger.debug("updata dns config failed:" + str(e))
             return response(code=400, data={"message":
                                             "update config error"})
         return response(data=self.model.db)
 
     def update_config(self):
-        try:
-            # generate config string
-            conf_str = self.generate_config()
-            # write config string to CONFIG_PATH
-            self.write_config(conf_str)
-            logger.info("dns config is updated")
-            return True
-        except Exception as e:
-            logger.info("update config file error:%s" % e)
-            return False
+
+        # generate config string
+        conf_str = self.generate_config()
+
+        # write config string to CONFIG_PATH
+        self.write_config(conf_str)
 
     def generate_config(self):
         conf_str = ""
