@@ -41,8 +41,8 @@ class TestDnsClass(unittest.TestCase):
         Dns.do_get(self.dns, message=None, response=mock_fun)
 
         # assert
-        self.assertEqual(mock_fun.call_args_list[0][1]["data"], {"dns": ["1.1.1.1", "2.2.2.2"]})
         self.assertEqual(len(mock_fun.call_args_list), 1)
+        self.assertEqual(mock_fun.call_args_list[0][1]["data"], {"dns": ["1.1.1.1", "2.2.2.2"]})
 
     def test_do_put_without_data_should_return_code_400(self):
 
@@ -54,8 +54,8 @@ class TestDnsClass(unittest.TestCase):
         Dns.do_put(self.dns, message=message, response=mock_fun)
 
         # assert
-        self.assertEqual(mock_fun.call_args_list[0][1]["code"], 400)
         self.assertEqual(len(mock_fun.call_args_list), 1)
+        self.assertEqual(mock_fun.call_args_list[0][1]["code"], 400)
 
     def test_do_put_with_invalid_data_should_return_code_400(self):
 
@@ -67,8 +67,8 @@ class TestDnsClass(unittest.TestCase):
         Dns.do_put(self.dns, message=message, response=mock_fun)
 
         # assert
-        self.assertEqual(mock_fun.call_args_list[0][1]["code"], 400)
         self.assertEqual(len(mock_fun.call_args_list), 1)
+        self.assertEqual(mock_fun.call_args_list[0][1]["code"], 400)
 
     @patch("dns.Dns.update_config")
     def test_do_put_with_update_config_failed_should_return_code_400(self, update_config):
@@ -82,8 +82,8 @@ class TestDnsClass(unittest.TestCase):
         Dns.do_put(self.dns, message=message, response=mock_fun)
 
         # assert
-        self.assertEqual(mock_fun.call_args_list[0][1]["code"], 400)
         self.assertEqual(len(mock_fun.call_args_list), 1)
+        self.assertEqual(mock_fun.call_args_list[0][1]["code"], 400)
 
     @patch("dns.Dns.update_config")
     def test_do_put_with_update_config_success_should_return_code_200(self, update_config):
@@ -98,8 +98,8 @@ class TestDnsClass(unittest.TestCase):
         Dns.do_put(self.dns, message=message, response=mock_fun)
 
         # assert
-        self.assertEqual(mock_fun.call_args_list[0][1]["data"], {"dns": ["1.1.1.1", "2.2.2.2"]})
         self.assertEqual(len(mock_fun.call_args_list), 1)
+        self.assertEqual(mock_fun.call_args_list[0][1]["data"], {"dns": ["1.1.1.1", "2.2.2.2"]})
 
     @patch("dns.Dns.write_config")
     @patch("dns.Dns.generate_config")
