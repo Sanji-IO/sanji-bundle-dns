@@ -17,6 +17,8 @@ class Dns(Sanji):
     def init(self, *args, **kwargs):
         path_root = os.path.abspath(os.path.dirname(__file__))
         self.model = ModelInitiator("dns", path_root, backup_interval=1)
+
+    def run(self):
         self.update_config()
 
     @Route(methods="get", resource="/network/dns")
