@@ -1,3 +1,9 @@
 {
+	"route_interface": "eth0",
+	"dns_list": {
+		"eth0": [],
+		"eth1": [],
+		"wwlan0": []
+	},
 	"dns": []
 }
