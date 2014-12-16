@@ -8,7 +8,7 @@
   "main": "dns.py",
   "argument": "",
   "priority": 55,
-  "hook": [],
+  "hook": ["route"],
   "dependencies": {},
   "repository": "",
   "role": "model",
