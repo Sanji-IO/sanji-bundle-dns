@@ -38,22 +38,21 @@ class Dns(Sanji):
         dns data to /etc/resolv.conf
         '''
 
-        if not(isinstance(message.data["interface"], str)):
-            msg = "route didn't has interface"
-            logger.warning(msg)
-            return response(code=400, message={msg})
-
-        self.model.db["route_interface"] = message.data["interface"]
-        self.model.save_db()
+        try:
+            self.model.db["route_interface"] = message.data["interface"]
+            self.model.save_db()
+        except (ValueError, KeyError):
+            logger.warning("Invalid input")
+            return response(code=400, data={"message": "Invalid input"})
 
         try:
             self.update_config()
             logger.info("update dns config success")
+            return response(data=self.model.db)
         except Exception as e:
             logger.debug("updata dns config failed:" + str(e))
             return response(code=400, data={"message":
                                             "update config error"})
-        return response(data=self.model.db)
 
     @Route(resource="/network/cellulars")
     def listen_cellular_event(self, message):
