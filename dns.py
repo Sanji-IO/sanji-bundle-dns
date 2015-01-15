@@ -28,19 +28,22 @@ class Dns(Sanji):
     def do_get(self, message, response):
         return response(data=self.model.db)
 
-    @Route(methods="put", resource="/network/dns")
-    def put(self, message, response):
-        return self.do_put(message, response)
+    @Route(methods="put", resource="/network/routes/default")
+    def hook_route(self, message, response):
+        return self.do_hook_route(message, response)
 
-    def do_put(self, message, response):
-        if not(hasattr(message, "data")):
-            logger.debug("Invalid Input")
-            return response(code=400, data={"message": "Invalid Input"})
+    def do_hook_route(self, message, response):
+        '''
+        if interface in interface list, then update corresponding
+        dns data to /etc/resolv.conf
+        '''
 
-        if not(isinstance(message.data["dns"], list)):
-            logger.debug("Invalid Data")
-            return response(code=400, data={"message": "Invalid Data"})
-        self.model.db["dns"] = message.data["dns"]
+        if not(isinstance(message.data["interface"], str)):
+            msg = "route didn't has interface"
+            logger.warning(msg)
+            return response(code=400, message={msg})
+
+        self.model.db["route_interface"] = message.data["interface"]
         self.model.save_db()
 
         try:
@@ -52,9 +55,43 @@ class Dns(Sanji):
                                             "update config error"})
         return response(data=self.model.db)
 
-    def update_config(self):
+    @Route(resource="/network/cellulars")
+    def listen_cellular_event(self, message):
+        '''
+        listen cellular dns and then update dns list to db
+        '''
 
-        # generate config string
+        if not(hasattr(message, "data")):
+            raise ValueError("listen cellular event didn't has data")
+
+        logger.debug("listen cellular event: %s" % message.data)
+        iface_name = message.data["name"]
+
+        try:
+            self.model.db["dns_list"][iface_name] = message.data["dns"]
+            self.model.save_db()
+        except Exception as e:
+            raise ValueError("update cellular event data error: %s" % str(e))
+
+    @Route(methods="put", resource="/network/interfaces")
+    def listen_ethernet_event(self, message):
+        '''
+        listen ethernet dns and then updata dns list to db
+        '''
+
+        if not(hasattr(message, "data")):
+            raise ValueError("listen ethernet event didn't has data")
+
+        logger.debug("listen ethernet event %s" % message.data)
+        iface_name = message.data["name"]
+
+        try:
+            self.model.db["dns_list"][iface_name] = message.data["dns"]
+            self.model.save_db()
+        except Exception as e:
+            raise ValueError("updata ethernet event data error: %s" % str(e))
+
+    def update_config(self):
         conf_str = self.generate_config()
 
         # write config string to CONFIG_PATH
@@ -62,7 +99,8 @@ class Dns(Sanji):
 
     def generate_config(self):
         conf_str = ""
-        for server in self.model.db["dns"]:
+        route_interface = self.model.db["route_interface"]
+        for server in self.model.db["dns_list"][route_interface]:
             conf_str = conf_str + ("nameserver %s\n" % server)
         return conf_str
 
