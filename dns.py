@@ -47,6 +47,9 @@ class Dns(Sanji):
 
         try:
             self.update_config()
+            route_iface = message.data["interface"]
+            self.model.db["dns"] = self.model.db["dns_list"][route_iface]
+
             logger.info("update dns config success")
             return response(data=self.model.db)
         except Exception as e:
@@ -61,7 +64,7 @@ class Dns(Sanji):
         '''
 
         if not(hasattr(message, "data")):
-            raise ValueError("listen cellular event didn't has data")
+            raise ValueError("listen cellular event data failed")
 
         logger.debug("listen cellular event: %s" % message.data)
         iface_name = message.data["name"]
@@ -79,7 +82,7 @@ class Dns(Sanji):
         '''
 
         if not(hasattr(message, "data")):
-            raise ValueError("listen ethernet event didn't has data")
+            raise ValueError("listen ethernet event data failed")
 
         logger.debug("listen ethernet event %s" % message.data)
         iface_name = message.data["name"]
