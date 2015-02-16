@@ -8,15 +8,23 @@
   "main": "dns.py",
   "argument": "",
   "priority": 55,
-  "hook": [],
+  "hook": ["route"],
   "dependencies": {},
   "repository": "",
   "role": "model",
   "ttl": 10,
   "resources": [
     {
-   "methods": ["get", "put"],
-   "resource": "/network/dns"
+      "methods": ["get", "put"],
+      "resource": "/network/dns"
+    },
+    {
+      "role": "view",
+      "resource": "/network/cellulars"
+    },
+    {
+      "role": "view",
+      "resource": "/network/interfaces"
     }
   ]
 }
