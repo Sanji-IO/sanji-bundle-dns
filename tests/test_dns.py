@@ -82,26 +82,34 @@ class TestDnsClass(unittest.TestCase):
 
         # arrange
         message = Message({"data": {
-            "interface": "eth1",
+                "route_interface": "eth0",
+                "dns": ["8.8.8.8", "192.168.50.33"]
             }
         })
-        self.dns.model.db = {"route_interface": "eth0",
-                             "dns_list":
-                             {"eth0": [],
-                              "eth1": ["1.1.1.1", "2.2.2.2", "3.3.3.3"],
-                              "wwlan0": []
-                              },
-                             "dns": []
-                             }
+
+        self.dns.model.db = {
+            "route_interface": "eth0",
+            "dns_list":
+                {
+                    "eth0": [],
+                    "eth1": [],
+                    "wwlan0": []
+                },
+            "dns": []
+        }
 
         mock_fun = Mock(code=200, data=None)
         update_config.return_value = True
-        check_data = {"route_interface": "eth1",
-                      "dns_list":
-                      {"eth0": [],
-                       "eth1": ["1.1.1.1", "2.2.2.2", "3.3.3.3"],
-                       "wwlan0": []},
-                      "dns": ["1.1.1.1", "2.2.2.2", "3.3.3.3"]}
+        check_data = {
+            "route_interface": "eth0",
+            "dns_list":
+                {
+                    "eth0": [],
+                    "eth1": [],
+                    "wwlan0": []
+                },
+            "dns": ["8.8.8.8", "192.168.50.33"]
+        }
 
         # act
         Dns.do_hook_route(self.dns, message=message, response=mock_fun)

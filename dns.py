@@ -28,7 +28,7 @@ class Dns(Sanji):
     def do_get(self, message, response):
         return response(data=self.model.db)
 
-    @Route(methods="put", resource="/network/routes/default")
+    @Route(methods="put", resource="/network/dns")
     def hook_route(self, message, response):
         return self.do_hook_route(message, response)
 
@@ -39,17 +39,15 @@ class Dns(Sanji):
         '''
 
         try:
-            self.model.db["route_interface"] = message.data["interface"]
+            self.model.db["route_interface"] = message.data["route_interface"]
+            self.model.db["dns"] = message.data["dns"]
             self.model.save_db()
         except (ValueError, KeyError):
-            logger.warning("Invalid input")
+            logger.debug("Invalid input")
             return response(code=400, data={"message": "Invalid input"})
 
         try:
             self.update_config()
-            route_iface = message.data["interface"]
-            self.model.db["dns"] = self.model.db["dns_list"][route_iface]
-
             logger.info("update dns config success")
             return response(data=self.model.db)
         except Exception as e:
@@ -101,8 +99,7 @@ class Dns(Sanji):
 
     def generate_config(self):
         conf_str = ""
-        route_interface = self.model.db["route_interface"]
-        for server in self.model.db["dns_list"][route_interface]:
+        for server in self.model.db["dns"]:
             conf_str = conf_str + ("nameserver %s\n" % server)
         return conf_str
 
