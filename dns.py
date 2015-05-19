@@ -8,11 +8,23 @@ from sanji.core import Route
 from sanji.model_initiator import ModelInitiator
 from sanji.connection.mqtt import Mqtt
 
-logger = logging.getLogger()
+from voluptuous import Schema
+from voluptuous import REMOVE_EXTRA
+from voluptuous import All
+from voluptuous import Any
+from voluptuous import Required
+from voluptuous import Length
+
+_logger = logging.getLogger("sanji.dns")
 
 
 class Dns(Sanji):
     CONFIG_PATH = "/etc/resolv.conf"
+
+    PUT_SCHEMA = Schema({
+        Required("route_interface"): All(str, Length(1, 255)),
+        Required("dns"): [Any("", All(str, Length(0, 15)))]
+    }, extra=REMOVE_EXTRA)
 
     def init(self, *args, **kwargs):
         path_root = os.path.abspath(os.path.dirname(__file__))
@@ -28,7 +40,7 @@ class Dns(Sanji):
     def do_get(self, message, response):
         return response(data=self.model.db)
 
-    @Route(methods="put", resource="/network/dns")
+    @Route(methods="put", resource="/network/dns", schema=PUT_SCHEMA)
     def hook_route(self, message, response):
         return self.do_hook_route(message, response)
 
@@ -43,15 +55,15 @@ class Dns(Sanji):
             self.model.db["dns"] = message.data["dns"]
             self.model.save_db()
         except (ValueError, KeyError):
-            logger.debug("Invalid input")
+            _logger.debug("Invalid input")
             return response(code=400, data={"message": "Invalid input"})
 
         try:
             self.update_config()
-            logger.info("update dns config success")
+            _logger.info("update dns config success")
             return response(data=self.model.db)
         except Exception as e:
-            logger.debug("updata dns config failed:" + str(e))
+            _logger.debug("updata dns config failed:" + str(e))
             return response(code=400, data={"message":
                                             "update config error"})
 
@@ -64,7 +76,7 @@ class Dns(Sanji):
         if not(hasattr(message, "data")):
             raise ValueError("listen cellular event data failed")
 
-        logger.debug("listen cellular event: %s" % message.data)
+        _logger.debug("listen cellular event: %s" % message.data)
         iface_name = message.data["name"]
 
         try:
@@ -82,7 +94,7 @@ class Dns(Sanji):
         if not(hasattr(message, "data")):
             raise ValueError("listen ethernet event data failed")
 
-        logger.debug("listen ethernet event %s" % message.data)
+        _logger.debug("listen ethernet event %s" % message.data)
         iface_name = message.data["name"]
 
         try:
@@ -115,5 +127,5 @@ def main():
 if __name__ == '__main__':
     FORMAT = '%(asctime)s - %(levelname)s - %(lineno)s - %(message)s'
     logging.basicConfig(level=0, format=FORMAT)
-    logger = logging.getLogger("dns")
+    _logger = logging.getLogger("sanji.dns")
     main()
