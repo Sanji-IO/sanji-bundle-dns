@@ -13,6 +13,7 @@ from voluptuous import REMOVE_EXTRA
 from voluptuous import All
 from voluptuous import Any
 from voluptuous import Required
+from voluptuous import Optional
 from voluptuous import Length
 
 _logger = logging.getLogger("sanji.dns")
@@ -21,9 +22,14 @@ _logger = logging.getLogger("sanji.dns")
 class Dns(Sanji):
     CONFIG_PATH = "/etc/resolv.conf"
 
-    PUT_SCHEMA = Schema({
-        Required("route_interface"): All(str, Length(1, 255)),
+    PUT_DB_SCHEMA = Schema({
+        Required("interface"): All(str, Length(1, 255)),
         Required("dns"): [Any("", All(str, Length(0, 15)))]
+    }, extra=REMOVE_EXTRA)
+
+    PUT_DNS_SCHEMA = Schema({
+        Optional("interface"): All(str, Length(1, 255)),
+        Optional("dns"): [Any("", All(str, Length(0, 15)))]
     }, extra=REMOVE_EXTRA)
 
     def init(self, *args, **kwargs):
@@ -40,8 +46,8 @@ class Dns(Sanji):
     def do_get(self, message, response):
         return response(data=self.model.db)
 
-    @Route(methods="put", resource="/network/dns", schema=PUT_SCHEMA)
-    def hook_route(self, message, response):
+    @Route(methods="put", resource="/network/dns")
+    def hook_route(self, message, response, schema=PUT_DNS_SCHEMA):
         return self.do_hook_route(message, response)
 
     def do_hook_route(self, message, response):
