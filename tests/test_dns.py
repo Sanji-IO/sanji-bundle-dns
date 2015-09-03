@@ -9,331 +9,427 @@ from mock import patch
 from mock import mock_open
 from mock import Mock
 
-logger = logging.getLogger()
 
 try:
     sys.path.append(os.path.dirname(os.path.realpath(__file__)) + '/../')
     from dns import Dns
 except ImportError as e:
+    print os.path.dirname(os.path.realpath(__file__)) + '/../'
+    print sys.path
+    print e
     print "Please check the python PATH for import test module. (%s)" \
         % __file__
     exit(1)
 
+dirpath = os.path.dirname(os.path.realpath(__file__))
+
+class MockLoggingHandler(logging.Handler):
+    """Mock logging handler to check for expected logs.
+
+    Messages are available from an instance's ``messages`` dict, in order, indexed by
+    a lowercase log level string (e.g., 'debug', 'info', etc.).
+
+    Ref:
+        http://stackoverflow.com/questions/899067/how-should-i-verify-a-log-message-when-testing-python-code-under-nose
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.messages = {"debug": [], "info": [], "warning": [], "error": [],
+                         "critical": []}
+        super(MockLoggingHandler, self).__init__(*args, **kwargs)
+
+    def emit(self, record):
+        "Store a message from ``record`` in the instance's ``messages`` dict."
+        self.acquire()
+        try:
+            self.messages[record.levelname.lower()].append(record.getMessage())
+        finally:
+            self.release()
+
+    def reset(self):
+        self.acquire()
+        try:
+            for message_list in self.messages.values():
+                del message_list[:]
+        finally:
+            self.release()
 
 class TestDnsClass(unittest.TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        super(TestDnsClass, cls).setUpClass()
+        # Assuming you follow Python's logging module's documentation's
+        # recommendation about naming your module's logs after the module's
+        # __name__,the following getLogger call should fetch the same logger
+        # you use in the foo module
+        dns_log = logging.getLogger("sanji.dns")
+        cls._dns_log_handler = MockLoggingHandler(level="DEBUG")
+        dns_log.addHandler(cls._dns_log_handler)
+        cls.dns_log_messages = cls._dns_log_handler.messages
+
     def setUp(self):
-        self.dns = Dns(connection=Mockup())
+        super(TestDnsClass, self).setUp()
+        self._dns_log_handler.reset() # So each test is independent
+
+        self.name = "dns"
+        self.bundle = Dns(connection=Mockup())
 
     def tearDown(self):
-        self.dns.stop()
-        self.dns = None
-
-    def test_do_get_should_return_db(self):
-
-        # arrange
-        self.dns.model.db = {"dns": ["1.1.1.1", "2.2.2.2"]}
-
-        mock_fun = Mock(code=200, data=None)
-
-        # act
-        Dns.do_get(self.dns, message=None, response=mock_fun)
-
-        # assert
-        self.assertEqual(len(mock_fun.call_args_list), 1)
-        self.assertEqual(mock_fun.call_args_list[0][1]["data"],
-                         {"dns": ["1.1.1.1", "2.2.2.2"]})
-
-    def test_do_hook_route_with_data_error_should_return_code_400(self):
-
-        # arrange
-        message = Message({"data": {}})
-        mock_fun = Mock(code=200, data=None)
-
-        # act
-        Dns.do_hook_route(self.dns, message=message, response=mock_fun)
-
-        # assert
-        self.assertEqual(mock_fun.call_args_list[0][1]["code"], 400)
-
-    @patch("dns.Dns.update_config")
-    def test_do_hook_route_with_update_config_failed(self, update_config):
-        """
-        test_do_hook_route_with_update_config_failed_should return code 400
-        """
-
-        # arrange
-        message = Message({"data": {
-            "interface": "eth1"
-            }
-        })
-
-        mock_fun = Mock(code=200, data=None)
-        update_config.side_effect = Exception("update failed")
-
-        # act
-        Dns.do_hook_route(self.dns, message=message, response=mock_fun)
-
-        # assert
-        self.assertEqual(mock_fun.call_args_list[0][1]["code"], 400)
-
-    @patch("dns.Dns.update_config")
-    def test_do_hook_route_should_return_code_200(self, update_config):
-
-        # arrange
-        message = Message({"data": {
-                "route_interface": "eth0",
-                "dns": ["8.8.8.8", "192.168.50.33"]
-            }
-        })
-
-        self.dns.model.db = {
-            "route_interface": "eth0",
-            "dns_list":
-                {
-                    "eth0": [],
-                    "eth1": [],
-                    "wwlan0": []
-                },
-            "dns": []
-        }
-
-        mock_fun = Mock(code=200, data=None)
-        update_config.return_value = True
-        check_data = {
-            "route_interface": "eth0",
-            "dns_list":
-                {
-                    "eth0": [],
-                    "eth1": [],
-                    "wwlan0": []
-                },
-            "dns": ["8.8.8.8", "192.168.50.33"]
-        }
-
-        # act
-        Dns.do_hook_route(self.dns, message=message, response=mock_fun)
-
-        # assert
-        self.assertEqual(mock_fun.call_args_list[0][1]["data"], check_data)
-
-    def test_listen_cellular_event_with_data_failed(self):
-        '''
-        test_listen_cellular_event_with_data_failed
-        should raise ValueError exception
-        '''
-
-        # arrange
-        message = Message({})
-        except_flag = 0
-        self.dns.model.db = {"route_interface": "eth0",
-                             "dns_list":
-                             {"eth0": [],
-                              "eth1": [],
-                              "wwlan0": []
-                              },
-                             "dns": []
-                             }
-
-        # act
+        self.bundle.dns_db[:] = []
+        self.bundle.stop()
+        self.bundle = None
         try:
-            Dns.listen_cellular_event(self.dns, message=message, test=True)
-        except ValueError:
-            except_flag = 1
+            os.remove("%s/data/%s.json" % (dirpath, self.name))
+        except OSError:
+            pass
 
-        # assert
-        self.assertEqual(except_flag, 1)
-
-    def test_listen_cellular_event(self):
-
-        # arrange
-        message = Message({"data": {
-            "name": "wwlan0",
-            "dns": ["168.95.1.1", "168.95.1.2"]
-            }
-        })
-
-        self.dns.model.db = {"route_interface": "wwlan0",
-                             "dns_list":
-                             {"eth0": [],
-                              "eth1": [],
-                              "wwlan0": []
-                              },
-                             "dns": ["168.95.1.1", "168.95.1.2"]
-                             }
-
-        check_data = {"route_interface": "wwlan0",
-                      "dns_list":
-                      {"eth0": [],
-                       "eth1": [],
-                       "wwlan0": ["168.95.1.1", "168.95.1.2"]},
-                      "dns": ["168.95.1.1", "168.95.1.2"]}
-
-        # act
-        Dns.listen_cellular_event(self.dns, message=message, test=True)
-
-        # assert
-        self.assertEqual(self.dns.model.db, check_data)
-
-    def test_listen_cellular_event_with_update_cellular_event_failed(self):
-
-        # arrange
-        message = Message({"data": {
-            "name": "wwlan0",
-            }
-        })
-
-        self.dns.model.db = {"route_interface": "wwlan0",
-                             "dns_list":
-                             {"eth0": [],
-                              "eth1": [],
-                              "wwlan0": []
-                              },
-                             "dns": ["168.95.1.1", "168.95.1.2"]
-                             }
-
-        except_flag = 0
-
-        # act
         try:
-            Dns.listen_cellular_event(self.dns, message=message, test=True)
-        except Exception:
-            except_flag = 1
+            os.remove("%s/data/%s.json.backup" % (dirpath, self.name))
+        except OSError:
+            pass
 
-        # assert
-        self.assertEqual(except_flag, 1)
-
-    def test_listen_ethernet_event_with_data_failed(self):
+    @patch.object(Dns, "update_config")
+    def test__run(self, mock_update_config):
         """
-        test_listen_cellular_event_with_data_failed
-        should raise ValueError exception
+        run
         """
+        self.bundle.run()
+        mock_update_config.assert_called_once_with()
 
+    @patch.object(Dns, "update_config")
+    def test__run__update_resolv_conf_failed(self, mock_update_config):
+        """
+        run: failed to update resolv.conf
+        """
+        mock_update_config.side_effect = IOError
+        self.bundle.run()
+        self.assertEqual(len(self.dns_log_messages["warning"]), 1)
+        self.assertIn("Failed to update", self.dns_log_messages["warning"][0])
+
+    def test__get_dns_list(self):
+        """
+        get_dns_list
+        """
         # arrange
-        message = Message({})
-        except_flag = 0
+        dns = { "interface": "eth0",
+                "dns": ["8.8.8.8", "8.8.4.4"] }
+        self.bundle.dns_db.append(dns)
 
-        self.dns.model.db = {"route_interface": "eth0",
-                             "dns_list":
-                             {"eth0": [],
-                              "eth1": [],
-                              "wwlan0": []
-                              },
-                             "dns": []
-                             }
+        dns = { "interface": "eth1",
+                "dns": ["1.1.1.1", "2.2.2.2"] }
+        self.bundle.dns_db.append(dns)
 
         # act
-        try:
-            Dns.listen_ethernet_event(self.dns, message=message, test=True)
-        except ValueError:
-            except_flag = 1
+        dns = self.bundle.get_dns_list("eth0")
 
         # assert
-        self.assertEqual(except_flag, 1)
+        self.assertEqual(self.bundle.dns_db[0], dns)
 
-    def test_listen_ethernet_event(self):
-
+    def test__get_dns_list__cannot_find_interface(self):
+        """
+        get_dns_list: cannot find interface from database
+        """
         # arrange
-        message = Message({"data": {
-            "name": "eth1",
-            "dns": ["1.1.1.1", "2.2.2.2", "3.3.3.3"]
+        dns = { "interface": "eth0",
+                "dns": ["8.8.8.8", "8.8.4.4"] }
+        self.bundle.dns_db.append(dns)
+
+        # act
+        dns = self.bundle.get_dns_list("eth1")
+
+        # assert
+        self.assertEqual(None, dns)
+
+    def test__add_dns_list(self):
+        """
+        add_dns_list
+        """
+        dns = { "interface": "eth1",
+                "dns": ["8.8.8.8", "8.8.4.4"] }
+        self.bundle.add_dns_list(dns)
+        self.assertEqual(self.bundle.dns_db[0], dns)
+
+    @patch.object(Dns, "update_config")
+    def test__add_dns_list__update(self, mock_update_config):
+        """
+        add_dns_list: update DNS list by interface
+        """
+        # arrange
+        dns = { "interface": "eth0",
+                "dns": ["8.8.8.8", "8.8.4.4"] }
+        self.bundle.dns_db.append(dns)
+
+        dns = { "interface": "eth0",
+                "dns": ["1.1.1.1", "2.2.2.2"] }
+
+        # act
+        self.bundle.add_dns_list(dns)
+
+        # assert
+        self.assertEqual(len(self.bundle.dns_db), 1)
+        self.assertEqual(self.bundle.dns_db[0], dns)
+
+    def test__remove_dns_list(self):
+        """
+        remove_dns_list
+        """
+        # arrange
+        dns = { "interface": "eth0",
+                "dns": ["8.8.8.8", "8.8.4.4"] }
+        self.bundle.dns_db.append(dns)
+
+        dns = { "interface": "eth1",
+                "dns": ["1.1.1.1", "2.2.2.2"] }
+        self.bundle.dns_db.append(dns)
+
+        # act
+        self.bundle.remove_dns_list("eth0")
+
+        # assert
+        self.assertEqual(len(self.bundle.dns_db), 1)
+        self.assertEqual(self.bundle.dns_db[0], dns)
+
+    def test__remove_dns_list__empty_db(self):
+        """
+        remove_dns_list: remove from an empty database
+        """
+        # act
+        self.bundle.remove_dns_list("eth0")
+
+        # assert
+        self.assertEqual(len(self.bundle.dns_db), 0)
+
+    def test__remove_dns_list__none_to_remove(self):
+        """
+        remove_dns_list: no such interface to be removed
+        """
+        # arrange
+        dns = { "interface": "eth0",
+                "dns": ["8.8.8.8", "8.8.4.4"] }
+        self.bundle.dns_db.append(dns)
+
+        dns = { "interface": "eth1",
+                "dns": ["1.1.1.1", "2.2.2.2"] }
+        self.bundle.dns_db.append(dns)
+
+        # act
+        self.bundle.remove_dns_list("eth2")
+
+        # assert
+        self.assertEqual(len(self.bundle.dns_db), 2)
+
+    def test__generate_config__by_interface(self):
+        """
+        _generate_config: generate resolv.conf content by interface
+        """
+        # arrange
+        self.bundle.model.db = {
+                "interface": "eth1"
             }
-        })
 
-        self.dns.model.db = {"route_interface": "eth1",
-                             "dns_list":
-                             {"eth0": [],
-                              "eth1": [],
-                              "wwlan0": []
-                              },
-                             "dns": ["1.1.1.1", "2.2.2.2", "3.3.3.3"]
-                             }
+        dns = { "interface": "eth0",
+                "dns": ["8.8.8.8", "8.8.4.4"] }
+        self.bundle.dns_db.append(dns)
 
-        check_data = {"route_interface": "eth1",
-                      "dns_list":
-                      {"eth0": [],
-                       "eth1": ["1.1.1.1", "2.2.2.2", "3.3.3.3"],
-                       "wwlan0": []},
-                      "dns": ["1.1.1.1", "2.2.2.2", "3.3.3.3"]}
+        dns = { "interface": "eth1",
+                "dns": ["1.1.1.1", "2.2.2.2"] }
+        self.bundle.dns_db.append(dns)
 
         # act
-        Dns.listen_ethernet_event(self.dns, message=message, test=True)
-
-        # assert
-        self.assertEqual(self.dns.model.db, check_data)
-
-    def test_listen_ethernet_event_with_update_ethernet_event_failed(self):
-
-        # arrange
-        message = Message({"data": {
-            "name": "eth1",
-            }
-        })
-
-        self.dns.model.db = {"route_interface": "eth1",
-                             "dns_list":
-                             {"eth0": [],
-                              "eth1": [],
-                              "wwlan0": []
-                              },
-                             "dns": ["1.1.1.1", "2.2.2.2", "3.3.3.3"]
-                             }
-        except_flag = 0
-        # act
-        try:
-            Dns.listen_ethernet_event(self.dns, message=message, test=True)
-        except:
-            except_flag = 1
-
-        # assert
-        self.assertEqual(except_flag, 1)
-
-    @patch("dns.Dns.write_config")
-    @patch("dns.Dns.generate_config")
-    def test_update_config(self, generate_config, write_config):
-        """
-        test_update_config, it should_be_called_once
-        """
-
-        # arrange
-        generate_config.return_value = "nameserver 1.1.1.1\n" + \
-                                       "nameserver 2.2.2.2\n"
-        # act
-        self.dns.update_config()
-
-        # assert
-        write_config.assert_called_once_with("nameserver 1.1.1.1\n" +
-                                             "nameserver 2.2.2.2\n")
-
-    def test_generate_config_should_return_config_string(self):
-
-        # arrange
-        self.dns.model.db = {"route_interface": "eth1",
-                             "dns_list":
-                             {"eth0": [],
-                              "eth1": ["1.1.1.1", "2.2.2.2"],
-                              "wwlan0": []},
-                             "dns": ["1.1.1.1", "2.2.2.2"]}
-
-        # act
-        rc = self.dns.generate_config()
+        rc = self.bundle._generate_config()
 
         # assert
         self.assertEqual(rc, "nameserver 1.1.1.1\n" + "nameserver 2.2.2.2\n")
 
-    def test_write_config_should_write_config_string_to_file(self):
-
+    def test__generate_config__by_dns(self):
+        """
+        _generate_config: generate resolv.conf content by dns list
+        """
         # arrange
-        conf_str = "nameserver 1.1.1.1\n" + "nameserver 2.2.2.2\n"
+        self.bundle.model.db = {
+                "dns": ["8.8.8.8", "3.3.3.3"]
+            }
+
+        dns = { "interface": "eth0",
+                "dns": ["8.8.8.8", "8.8.4.4"] }
+        self.bundle.dns_db.append(dns)
+
+        # act
+        rc = self.bundle._generate_config()
+
+        # assert
+        self.assertEqual(rc, "nameserver 8.8.8.8\n" + "nameserver 3.3.3.3\n")
+
+    def test__generate_config__without_dns(self):
+        """
+        _generate_config: without dns list
+        """
+        # arrange
+        self.bundle.model.db = {
+                "interface": "eth0"
+            }
+
+        # act
+        rc = self.bundle._generate_config()
+
+        # assert
+        self.assertEqual(rc, "")
+
+    def test__write_config(self):
+        """
+        _write_config
+        """
+        # arrange
+        resolv = "nameserver 1.1.1.1\n" + "nameserver 2.2.2.2\n"
 
         # patch open
         m = mock_open()
         with patch("dns.open", m, create=True) as f:
             # act
-            self.dns.write_config(conf_str)
+            self.bundle._write_config(resolv)
 
             # assert
-            f.return_value.write.assert_called_once_with(conf_str)
+            f.return_value.write.assert_called_once_with(resolv)
+
+    @patch.object(Dns, "_write_config")
+    @patch.object(Dns, "_generate_config")
+    def test__update_config(self, mock_generate_config, mock_write_config):
+        """
+        update_config: it should_be_called_once
+        """
+
+        # arrange
+        mock_generate_config.return_value = \
+                "nameserver 1.1.1.1\nnameserver 2.2.2.2\n"
+        # act
+        self.bundle.update_config()
+
+        # assert
+        mock_write_config.assert_called_once_with(
+                "nameserver 1.1.1.1\nnameserver 2.2.2.2\n")
+
+    def test__get_current_dns(self):
+        """
+        get_current_dns
+        """
+        # arrange
+        self.bundle.model.db = {
+                "interface": "eth0",
+                "dns": ["1.1.1.1", "2.2.2.2"]
+            }
+        mock_func = Mock(code=200, data=None)
+
+        # act
+        self.bundle.get_current_dns(message=None, response=mock_func)
+
+        # assert
+        self.assertEqual(len(mock_func.call_args_list), 1)
+        self.assertEqual(
+                mock_func.call_args_list[0][1]["data"],
+                {"interface": "eth0", "dns": ["1.1.1.1", "2.2.2.2"]})
+
+    @patch.object(Dns, "update_config")
+    def test__set_current_dns__by_interface(self, mock_update_config):
+        """
+        set_current_dns: set by interface
+        """
+        # arrange
+        dns = { "interface": "eth0",
+                "dns": ["8.8.8.8", "8.8.4.4"] }
+        self.bundle.dns_db.append(dns)
+
+        dns = { "interface": "eth1",
+                "dns": ["1.1.1.1", "2.2.2.2"] }
+        self.bundle.dns_db.append(dns)
+
+        message = Message({"data": { "interface": "eth0" }})
+        mock_func = Mock(code=200, data=None)
+
+        # act
+        self.bundle.set_current_dns(message=message, response=mock_func)
+
+        # assert
+        self.assertEqual(
+                mock_func.call_args_list[0][1]["data"], {"interface": "eth0"})
+
+    @patch.object(Dns, "update_config")
+    def test__set_current_dns__by_dns_list(self, mock_update_config):
+        """
+        set_current_dns: set by DNS list
+        """
+        # arrange
+        dns = { "dns": ["1.1.1.1", "2.2.2.2", "3.3.3.3"]}
+        message = Message({"data": dns})
+        mock_func = Mock(code=200, data=None)
+
+        # act
+        self.bundle.set_current_dns(message=message, response=mock_func)
+
+        # assert
+        self.assertEqual(mock_func.call_args_list[0][1]["data"], dns)
+
+    @patch.object(Dns, "update_config")
+    def test__set_current_dns__update_config_failed(self, mock_update_config):
+        """
+        set_current_dns: update config failed
+        """
+        # arrange
+        mock_update_config.side_effect = IOError("Write error!")
+        dns = { "dns": ["1.1.1.1", "2.2.2.2", "3.3.3.3"]}
+        message = Message({"data": dns})
+        mock_func = Mock(code=200, data=None)
+
+        # act
+        self.bundle.set_current_dns(message=message, response=mock_func)
+
+        # assert
+        self.assertEqual(mock_func.call_args_list[0][1]["code"], 400)
+
+    def test__set_dns_database__add(self):
+        """
+        set_dns_database: add to database
+        """
+        # arrange
+        dns = { "interface": "eth1", "dns": ["1.1.1.1", "2.2.2.2", "3.3.3.3"]}
+        message = Message({"data": dns})
+        mock_func = Mock(code=200, data=None)
+
+        # act
+        self.bundle.set_dns_database(message=message, response=mock_func)
+
+        # assert
+        self.assertEqual(len(mock_func.call_args_list[0][1]["data"]), 1)
+        self.assertEqual(mock_func.call_args_list[0][1]["data"][0], dns)
+
+    @patch.object(Dns, "update_config")
+    def test__set_dns_database__update(self, mock_update_config):
+        """
+        set_dns_database: batch update
+        """
+        # arrange
+        dns1 = { "interface": "eth0", "dns": ["1.1.1.1", "2.2.2.2", "3.3.3.3"]}
+        dns2 = { "interface": "eth1", "dns": ["2.2.2.2", "3.3.3.3"]}
+        self.bundle.dns_db.append(dns1)
+        self.bundle.dns_db.append(dns2)
+
+        dns = [
+                { "interface": "eth0", "dns": ["8.8.8.8", "8.8.4.4"]},
+                { "interface": "eth1", "dns": ["1.1.1.1", "2.2.2.2"]}
+            ]
+        message = Message({"data": dns})
+        mock_func = Mock(code=200, data=None)
+
+        # act
+        self.bundle.set_dns_database(message=message, response=mock_func)
+
+        # assert
+        self.assertEqual(len(mock_func.call_args_list[0][1]["data"]), 2)
+        self.assertEqual(mock_func.call_args_list[0][1]["data"], dns)
+
 
 if __name__ == "__main__":
+    FORMAT = '%(asctime)s - %(levelname)s - %(lineno)s - %(message)s'
+    logging.basicConfig(level=20, format=FORMAT)
+    logger = logging.getLogger('DNS Test')
     unittest.main()

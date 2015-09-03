@@ -1,8 +1,8 @@
 {
   "name": "dns",
-  "version": "0.9.2",
-  "author": "Jordan Chen",
-  "email": "jordan.chen@moxa.com",
+  "version": "0.9.3",
+  "author": "Aeluin Chen",
+  "email": "aeluin.chen@moxa.com",
   "description": "Handle the dns settings.",
   "license": "MOXA",
   "main": "dns.py",
@@ -19,8 +19,8 @@
       "resource": "/network/dns"
     },
     {
-      "role": "view",
-      "resource": "/network/cellulars"
+      "methods": ["get", "put"],
+      "resource": "/network/dns/db"
     },
     {
       "role": "view",
