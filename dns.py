@@ -217,7 +217,7 @@ class Dns(Sanji):
     def _put_dns_database(self, message, response):
         return self.set_dns_database(message, response)
 
-    @Route(resource="/network/interfaces")
+    @Route(resource="/network/interface")
     def _event_network_interface(self, message, schema=IFACE_SCHEMA):
         """
         Listen interface event to update the dns database and settings.

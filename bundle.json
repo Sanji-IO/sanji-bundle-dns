@@ -24,7 +24,7 @@
     },
     {
       "role": "view",
-      "resource": "/network/interfaces"
+      "resource": "/network/interface"
     }
   ]
 }
