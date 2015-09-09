@@ -217,13 +217,17 @@ class Dns(Sanji):
     def _put_dns_database(self, message, response):
         return self.set_dns_database(message, response)
 
-    @Route(resource="/network/interface")
-    def _event_network_interface(self, message, schema=IFACE_SCHEMA):
+    @Route(methods="put", resource="/network/interface")
+    def _event_network_interface(self, message):
         """
         Listen interface event to update the dns database and settings.
         """
         if not(hasattr(message, "data")):
             raise ValueError("Data cannot be None or empty.")
+        try:
+            self.IFACE_SCHEMA(message.data)
+        except Exception as e:
+            raise e
 
         _logger.debug("[/network/interface] interface: %s, dns: %s"
                       % (message.data["name"], message.data["dns"]))
