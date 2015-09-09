@@ -1,4 +1,2 @@
-flake8
 paho-mqtt
-coveralls
 sanji

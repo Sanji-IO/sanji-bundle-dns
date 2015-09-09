@@ -23,11 +23,12 @@ except ImportError as e:
 
 dirpath = os.path.dirname(os.path.realpath(__file__))
 
+
 class MockLoggingHandler(logging.Handler):
     """Mock logging handler to check for expected logs.
 
-    Messages are available from an instance's ``messages`` dict, in order, indexed by
-    a lowercase log level string (e.g., 'debug', 'info', etc.).
+    Messages are available from an instance's ``messages`` dict, in order,
+    indexed by a lowercase log level string (e.g., 'debug', 'info', etc.).
 
     Ref:
         http://stackoverflow.com/questions/899067/how-should-i-verify-a-log-message-when-testing-python-code-under-nose
@@ -54,6 +55,7 @@ class MockLoggingHandler(logging.Handler):
         finally:
             self.release()
 
+
 class TestDnsClass(unittest.TestCase):
 
     @classmethod
@@ -70,7 +72,7 @@ class TestDnsClass(unittest.TestCase):
 
     def setUp(self):
         super(TestDnsClass, self).setUp()
-        self._dns_log_handler.reset() # So each test is independent
+        self._dns_log_handler.reset()  # So each test is independent
 
         self.name = "dns"
         self.bundle = Dns(connection=Mockup())
@@ -112,12 +114,12 @@ class TestDnsClass(unittest.TestCase):
         get_dns_list
         """
         # arrange
-        dns = { "interface": "eth0",
-                "dns": ["8.8.8.8", "8.8.4.4"] }
+        dns = {"interface": "eth0",
+               "dns": ["8.8.8.8", "8.8.4.4"]}
         self.bundle.dns_db.append(dns)
 
-        dns = { "interface": "eth1",
-                "dns": ["1.1.1.1", "2.2.2.2"] }
+        dns = {"interface": "eth1",
+               "dns": ["1.1.1.1", "2.2.2.2"]}
         self.bundle.dns_db.append(dns)
 
         # act
@@ -131,8 +133,8 @@ class TestDnsClass(unittest.TestCase):
         get_dns_list: cannot find interface from database
         """
         # arrange
-        dns = { "interface": "eth0",
-                "dns": ["8.8.8.8", "8.8.4.4"] }
+        dns = {"interface": "eth0",
+               "dns": ["8.8.8.8", "8.8.4.4"]}
         self.bundle.dns_db.append(dns)
 
         # act
@@ -145,8 +147,8 @@ class TestDnsClass(unittest.TestCase):
         """
         add_dns_list
         """
-        dns = { "interface": "eth1",
-                "dns": ["8.8.8.8", "8.8.4.4"] }
+        dns = {"interface": "eth1",
+               "dns": ["8.8.8.8", "8.8.4.4"]}
         self.bundle.add_dns_list(dns)
         self.assertEqual(self.bundle.dns_db[0], dns)
 
@@ -156,12 +158,12 @@ class TestDnsClass(unittest.TestCase):
         add_dns_list: update DNS list by interface
         """
         # arrange
-        dns = { "interface": "eth0",
-                "dns": ["8.8.8.8", "8.8.4.4"] }
+        dns = {"interface": "eth0",
+               "dns": ["8.8.8.8", "8.8.4.4"]}
         self.bundle.dns_db.append(dns)
 
-        dns = { "interface": "eth0",
-                "dns": ["1.1.1.1", "2.2.2.2"] }
+        dns = {"interface": "eth0",
+               "dns": ["1.1.1.1", "2.2.2.2"]}
 
         # act
         self.bundle.add_dns_list(dns)
@@ -175,12 +177,12 @@ class TestDnsClass(unittest.TestCase):
         remove_dns_list
         """
         # arrange
-        dns = { "interface": "eth0",
-                "dns": ["8.8.8.8", "8.8.4.4"] }
+        dns = {"interface": "eth0",
+               "dns": ["8.8.8.8", "8.8.4.4"]}
         self.bundle.dns_db.append(dns)
 
-        dns = { "interface": "eth1",
-                "dns": ["1.1.1.1", "2.2.2.2"] }
+        dns = {"interface": "eth1",
+               "dns": ["1.1.1.1", "2.2.2.2"]}
         self.bundle.dns_db.append(dns)
 
         # act
@@ -205,12 +207,12 @@ class TestDnsClass(unittest.TestCase):
         remove_dns_list: no such interface to be removed
         """
         # arrange
-        dns = { "interface": "eth0",
-                "dns": ["8.8.8.8", "8.8.4.4"] }
+        dns = {"interface": "eth0",
+               "dns": ["8.8.8.8", "8.8.4.4"]}
         self.bundle.dns_db.append(dns)
 
-        dns = { "interface": "eth1",
-                "dns": ["1.1.1.1", "2.2.2.2"] }
+        dns = {"interface": "eth1",
+               "dns": ["1.1.1.1", "2.2.2.2"]}
         self.bundle.dns_db.append(dns)
 
         # act
@@ -224,16 +226,14 @@ class TestDnsClass(unittest.TestCase):
         _generate_config: generate resolv.conf content by interface
         """
         # arrange
-        self.bundle.model.db = {
-                "interface": "eth1"
-            }
+        self.bundle.model.db = {"interface": "eth1"}
 
-        dns = { "interface": "eth0",
-                "dns": ["8.8.8.8", "8.8.4.4"] }
+        dns = {"interface": "eth0",
+               "dns": ["8.8.8.8", "8.8.4.4"]}
         self.bundle.dns_db.append(dns)
 
-        dns = { "interface": "eth1",
-                "dns": ["1.1.1.1", "2.2.2.2"] }
+        dns = {"interface": "eth1",
+               "dns": ["1.1.1.1", "2.2.2.2"]}
         self.bundle.dns_db.append(dns)
 
         # act
@@ -247,12 +247,10 @@ class TestDnsClass(unittest.TestCase):
         _generate_config: generate resolv.conf content by dns list
         """
         # arrange
-        self.bundle.model.db = {
-                "dns": ["8.8.8.8", "3.3.3.3"]
-            }
+        self.bundle.model.db = {"dns": ["8.8.8.8", "3.3.3.3"]}
 
-        dns = { "interface": "eth0",
-                "dns": ["8.8.8.8", "8.8.4.4"] }
+        dns = {"interface": "eth0",
+               "dns": ["8.8.8.8", "8.8.4.4"]}
         self.bundle.dns_db.append(dns)
 
         # act
@@ -266,9 +264,7 @@ class TestDnsClass(unittest.TestCase):
         _generate_config: without dns list
         """
         # arrange
-        self.bundle.model.db = {
-                "interface": "eth0"
-            }
+        self.bundle.model.db = {"interface": "eth0"}
 
         # act
         rc = self.bundle._generate_config()
@@ -301,13 +297,13 @@ class TestDnsClass(unittest.TestCase):
 
         # arrange
         mock_generate_config.return_value = \
-                "nameserver 1.1.1.1\nnameserver 2.2.2.2\n"
+            "nameserver 1.1.1.1\nnameserver 2.2.2.2\n"
         # act
         self.bundle.update_config()
 
         # assert
         mock_write_config.assert_called_once_with(
-                "nameserver 1.1.1.1\nnameserver 2.2.2.2\n")
+            "nameserver 1.1.1.1\nnameserver 2.2.2.2\n")
 
     def test__get_current_dns(self):
         """
@@ -315,9 +311,9 @@ class TestDnsClass(unittest.TestCase):
         """
         # arrange
         self.bundle.model.db = {
-                "interface": "eth0",
-                "dns": ["1.1.1.1", "2.2.2.2"]
-            }
+            "interface": "eth0",
+            "dns": ["1.1.1.1", "2.2.2.2"]
+        }
         mock_func = Mock(code=200, data=None)
 
         # act
@@ -326,8 +322,8 @@ class TestDnsClass(unittest.TestCase):
         # assert
         self.assertEqual(len(mock_func.call_args_list), 1)
         self.assertEqual(
-                mock_func.call_args_list[0][1]["data"],
-                {"interface": "eth0", "dns": ["1.1.1.1", "2.2.2.2"]})
+            mock_func.call_args_list[0][1]["data"],
+            {"interface": "eth0", "dns": ["1.1.1.1", "2.2.2.2"]})
 
     @patch.object(Dns, "update_config")
     def test__set_current_dns__by_interface(self, mock_update_config):
@@ -335,15 +331,15 @@ class TestDnsClass(unittest.TestCase):
         set_current_dns: set by interface
         """
         # arrange
-        dns = { "interface": "eth0",
-                "dns": ["8.8.8.8", "8.8.4.4"] }
+        dns = {"interface": "eth0",
+               "dns": ["8.8.8.8", "8.8.4.4"]}
         self.bundle.dns_db.append(dns)
 
-        dns = { "interface": "eth1",
-                "dns": ["1.1.1.1", "2.2.2.2"] }
+        dns = {"interface": "eth1",
+               "dns": ["1.1.1.1", "2.2.2.2"]}
         self.bundle.dns_db.append(dns)
 
-        message = Message({"data": { "interface": "eth0" }})
+        message = Message({"data": {"interface": "eth0"}})
         mock_func = Mock(code=200, data=None)
 
         # act
@@ -351,7 +347,7 @@ class TestDnsClass(unittest.TestCase):
 
         # assert
         self.assertEqual(
-                mock_func.call_args_list[0][1]["data"], {"interface": "eth0"})
+            mock_func.call_args_list[0][1]["data"], {"interface": "eth0"})
 
     @patch.object(Dns, "update_config")
     def test__set_current_dns__by_dns_list(self, mock_update_config):
@@ -359,7 +355,7 @@ class TestDnsClass(unittest.TestCase):
         set_current_dns: set by DNS list
         """
         # arrange
-        dns = { "dns": ["1.1.1.1", "2.2.2.2", "3.3.3.3"]}
+        dns = {"dns": ["1.1.1.1", "2.2.2.2", "3.3.3.3"]}
         message = Message({"data": dns})
         mock_func = Mock(code=200, data=None)
 
@@ -376,7 +372,7 @@ class TestDnsClass(unittest.TestCase):
         """
         # arrange
         mock_update_config.side_effect = IOError("Write error!")
-        dns = { "dns": ["1.1.1.1", "2.2.2.2", "3.3.3.3"]}
+        dns = {"dns": ["1.1.1.1", "2.2.2.2", "3.3.3.3"]}
         message = Message({"data": dns})
         mock_func = Mock(code=200, data=None)
 
@@ -391,7 +387,7 @@ class TestDnsClass(unittest.TestCase):
         set_dns_database: add to database
         """
         # arrange
-        dns = { "interface": "eth1", "dns": ["1.1.1.1", "2.2.2.2", "3.3.3.3"]}
+        dns = {"interface": "eth1", "dns": ["1.1.1.1", "2.2.2.2", "3.3.3.3"]}
         message = Message({"data": dns})
         mock_func = Mock(code=200, data=None)
 
@@ -408,15 +404,15 @@ class TestDnsClass(unittest.TestCase):
         set_dns_database: batch update
         """
         # arrange
-        dns1 = { "interface": "eth0", "dns": ["1.1.1.1", "2.2.2.2", "3.3.3.3"]}
-        dns2 = { "interface": "eth1", "dns": ["2.2.2.2", "3.3.3.3"]}
+        dns1 = {"interface": "eth0", "dns": ["1.1.1.1", "2.2.2.2", "3.3.3.3"]}
+        dns2 = {"interface": "eth1", "dns": ["2.2.2.2", "3.3.3.3"]}
         self.bundle.dns_db.append(dns1)
         self.bundle.dns_db.append(dns2)
 
         dns = [
-                { "interface": "eth0", "dns": ["8.8.8.8", "8.8.4.4"]},
-                { "interface": "eth1", "dns": ["1.1.1.1", "2.2.2.2"]}
-            ]
+            {"interface": "eth0", "dns": ["8.8.8.8", "8.8.4.4"]},
+            {"interface": "eth1", "dns": ["1.1.1.1", "2.2.2.2"]}
+        ]
         message = Message({"data": dns})
         mock_func = Mock(code=200, data=None)
 
