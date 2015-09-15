@@ -1,3 +1,9 @@
+sanji-bundle-dns (0.9.5-1) unstable; urgency=low
+
+  * Increase the priority to start before route bundle.
+
+ -- Aeluin Chen <aeluin.chen@moxa.com>  Tue, 15 Sep 2015 18:59:41 +0800
+
 sanji-bundle-dns (0.9.4-1) unstable; urgency=low
 
   * Re-design the API.
