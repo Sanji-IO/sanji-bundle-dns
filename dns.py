@@ -143,7 +143,8 @@ class Dns(Sanji):
                 dns_list = dns["dns"]
 
         for server in dns_list:
-            resolv = resolv + ("nameserver %s\n" % server)
+            if server != "":
+                resolv = resolv + ("nameserver %s\n" % server)
         return resolv
 
     def _write_config(self, resolv):
