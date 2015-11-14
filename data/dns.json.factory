@@ -1,3 +1,5 @@
 {
+	"alternative": false,
+	"alternativeDNS": [],
 	"interface": "eth0"
 }
