@@ -1,5 +1,5 @@
 {
-	"alternative": false,
-	"alternativeDNS": [],
-	"interface": "eth0"
+	"enableFixed": false,
+	"fixedDNS": [],
+	"source": "eth0"
 }
