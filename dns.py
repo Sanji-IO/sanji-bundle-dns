@@ -108,9 +108,9 @@ class Dns(Sanji):
         Update DNS list by source from database.
 
         Args:
-            obj: a dictionary with "interface" and "dns" list, for example:
+            obj: a dictionary with "source" and "dns" list, for example:
                 {
-                    "interface": "eth0",
+                    "source": "eth0",
                     "dns": ["8.8.8.8", "8.8.4.4"]
                 }
         """
@@ -122,11 +122,11 @@ class Dns(Sanji):
 
     def add_dns_list(self, obj, update=True):
         """
-        Add DNS list by interface into database and update setting if
+        Add DNS list by source into database and update setting if
         required.
 
         Args:
-            obj: a dictionary with "interface" and "dns" list, for example:
+            obj: a dictionary with "source" and "dns" list, for example:
                 {
                     "source": "eth0",
                     "dns": ["8.8.8.8", "8.8.4.4"]
@@ -145,7 +145,7 @@ class Dns(Sanji):
 
     def remove_dns_list(self, source):
         """
-        Remove DNS list by interface from database.
+        Remove DNS list by source from database.
 
         Args:
             source: source for the DNS list belongs to.
@@ -159,7 +159,7 @@ class Dns(Sanji):
         Priority:
             1. fixed DNS
             2. temporary DNS
-            3. by interface
+            3. by source
         """
         resolv = ""
         data = self.get_current_dns()
@@ -201,13 +201,13 @@ class Dns(Sanji):
         if "enableFixed" not in data:
             data["enableFixed"] = False
 
-        if data["enableFixed"] == True:
+        if data["enableFixed"] is True:
             data["source"] = "fixed"
         if "source" in data:
             dns = self.get_dns_list(data["source"])
             if dns and "dns" in dns:
                 data["dns"] = copy.copy(dns["dns"])
-            elif data["enableFixed"] == True:
+            elif data["enableFixed"] is True:
                 data["dns"] = data["fixedDNS"]
         return data
 
@@ -220,27 +220,37 @@ class Dns(Sanji):
         """
         Update current DNS configuration by message.
         """
-        # add to DNS database if data include both interface and dns list
-        if "source" in data and "dns" in data:
+        # add to DNS database if data include both source and dns list
+        # fixed DNS updated later
+        if "source" in data and "dns" in data and data["source"] != "fixed":
             self.add_dns_list(data, False)
 
         # update settings
-        self.model.db.pop("source", None)
         self.model.db.pop("dns", None)
-        self.model.db.update(data)
+
         if "enableFixed" not in self.model.db:
             self.model.db["enableFixed"] = False
+
+        source = None if "source" not in data else data.pop("source")
+        dnslist = None if "dns" not in data else data.pop("dns")
+        if source and source != "fixed":
+                self.model.db["source"] = source
+        elif source is None and dnslist:
+            self.model.db.pop("source", None)
+            self.model.db["dns"] = dnslist
+
+        self.model.db.update(data)
+        self.save()
 
         # update fixed
         dns = {}
         dns["source"] = "fixed"
-        if "enableFixed" in self.model.db:
+        if "fixedDNS" in self.model.db:
             dns["dns"] = self.model.db["fixedDNS"]
         else:
             dns["dns"] = []
         self.set_dns_list(dns)
 
-        self.save()
         self.update_config()
 
     @Route(methods="put", resource="/network/dns")
@@ -257,7 +267,7 @@ class Dns(Sanji):
 
     def set_dns_database(self, message, response):
         """
-        Update DNS database batch or by interface.
+        Update DNS database batch or by source.
         """
         if type(message.data) is list:
             for dns in message.data:
