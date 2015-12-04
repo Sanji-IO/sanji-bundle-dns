@@ -344,7 +344,7 @@ class TestDnsClass(unittest.TestCase):
         # assert
         self.assertEqual(
             data,
-            {"enableFixed": False, 
+            {"enableFixed": False,
              "source": "eth0",
              "dns": ["1.1.1.1", "2.2.2.2"]})
 
