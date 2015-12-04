@@ -114,11 +114,11 @@ class TestDnsClass(unittest.TestCase):
         get_dns_list
         """
         # arrange
-        dns = {"interface": "eth0",
+        dns = {"source": "eth0",
                "dns": ["8.8.8.8", "8.8.4.4"]}
         self.bundle.dns_db.append(dns)
 
-        dns = {"interface": "eth1",
+        dns = {"source": "eth1",
                "dns": ["1.1.1.1", "2.2.2.2"]}
         self.bundle.dns_db.append(dns)
 
@@ -126,14 +126,14 @@ class TestDnsClass(unittest.TestCase):
         dns = self.bundle.get_dns_list("eth0")
 
         # assert
-        self.assertEqual(self.bundle.dns_db[0], dns)
+        self.assertEqual(self.bundle.dns_db[1], dns)
 
-    def test__get_dns_list__cannot_find_interface(self):
+    def test__get_dns_list__cannot_find_source(self):
         """
-        get_dns_list: cannot find interface from database
+        get_dns_list: cannot find source from database
         """
         # arrange
-        dns = {"interface": "eth0",
+        dns = {"source": "eth0",
                "dns": ["8.8.8.8", "8.8.4.4"]}
         self.bundle.dns_db.append(dns)
 
@@ -147,41 +147,41 @@ class TestDnsClass(unittest.TestCase):
         """
         add_dns_list
         """
-        dns = {"interface": "eth1",
+        dns = {"source": "eth1",
                "dns": ["8.8.8.8", "8.8.4.4"]}
         self.bundle.add_dns_list(dns)
-        self.assertEqual(self.bundle.dns_db[0], dns)
+        self.assertEqual(self.bundle.dns_db[1], dns)
 
     @patch.object(Dns, "update_config")
     def test__add_dns_list__update(self, mock_update_config):
         """
-        add_dns_list: update DNS list by interface
+        add_dns_list: update DNS list by source
         """
         # arrange
-        dns = {"interface": "eth0",
+        dns = {"source": "eth0",
                "dns": ["8.8.8.8", "8.8.4.4"]}
         self.bundle.dns_db.append(dns)
 
-        dns = {"interface": "eth0",
+        dns = {"source": "eth0",
                "dns": ["1.1.1.1", "2.2.2.2"]}
 
         # act
         self.bundle.add_dns_list(dns)
 
         # assert
-        self.assertEqual(len(self.bundle.dns_db), 1)
-        self.assertEqual(self.bundle.dns_db[0], dns)
+        self.assertEqual(len(self.bundle.dns_db), 2)
+        self.assertEqual(self.bundle.dns_db[1], dns)
 
     def test__remove_dns_list(self):
         """
         remove_dns_list
         """
         # arrange
-        dns = {"interface": "eth0",
+        dns = {"source": "eth0",
                "dns": ["8.8.8.8", "8.8.4.4"]}
         self.bundle.dns_db.append(dns)
 
-        dns = {"interface": "eth1",
+        dns = {"source": "eth1",
                "dns": ["1.1.1.1", "2.2.2.2"]}
         self.bundle.dns_db.append(dns)
 
@@ -189,8 +189,8 @@ class TestDnsClass(unittest.TestCase):
         self.bundle.remove_dns_list("eth0")
 
         # assert
-        self.assertEqual(len(self.bundle.dns_db), 1)
-        self.assertEqual(self.bundle.dns_db[0], dns)
+        self.assertEqual(len(self.bundle.dns_db), 2)
+        self.assertEqual(self.bundle.dns_db[1], dns)
 
     def test__remove_dns_list__empty_db(self):
         """
@@ -200,18 +200,18 @@ class TestDnsClass(unittest.TestCase):
         self.bundle.remove_dns_list("eth0")
 
         # assert
-        self.assertEqual(len(self.bundle.dns_db), 0)
+        self.assertEqual(len(self.bundle.dns_db), 1)
 
     def test__remove_dns_list__none_to_remove(self):
         """
-        remove_dns_list: no such interface to be removed
+        remove_dns_list: no such source to be removed
         """
         # arrange
-        dns = {"interface": "eth0",
+        dns = {"source": "eth0",
                "dns": ["8.8.8.8", "8.8.4.4"]}
         self.bundle.dns_db.append(dns)
 
-        dns = {"interface": "eth1",
+        dns = {"source": "eth1",
                "dns": ["1.1.1.1", "2.2.2.2"]}
         self.bundle.dns_db.append(dns)
 
@@ -219,20 +219,20 @@ class TestDnsClass(unittest.TestCase):
         self.bundle.remove_dns_list("eth2")
 
         # assert
-        self.assertEqual(len(self.bundle.dns_db), 2)
+        self.assertEqual(len(self.bundle.dns_db), 3)
 
-    def test__generate_config__by_interface(self):
+    def test__generate_config__by_source(self):
         """
-        _generate_config: generate resolv.conf content by interface
+        _generate_config: generate resolv.conf content by source
         """
         # arrange
-        self.bundle.model.db = {"interface": "eth1"}
+        self.bundle.model.db["source"] = "eth1"
 
-        dns = {"interface": "eth0",
+        dns = {"source": "eth0",
                "dns": ["8.8.8.8", "8.8.4.4"]}
         self.bundle.dns_db.append(dns)
 
-        dns = {"interface": "eth1",
+        dns = {"source": "eth1",
                "dns": ["1.1.1.1", "2.2.2.2"]}
         self.bundle.dns_db.append(dns)
 
@@ -247,10 +247,33 @@ class TestDnsClass(unittest.TestCase):
         _generate_config: generate resolv.conf content by dns list
         """
         # arrange
-        self.bundle.model.db = {"dns": ["8.8.8.8", "3.3.3.3"]}
+        self.bundle.model.db.pop("source", None)
+        self.bundle.model.db["dns"] = ["8.8.8.8", "3.3.3.3"]
 
-        dns = {"interface": "eth0",
+        dns = {"source": "eth0",
                "dns": ["8.8.8.8", "8.8.4.4"]}
+        self.bundle.dns_db.append(dns)
+
+        # act
+        rc = self.bundle._generate_config()
+
+        # assert
+        self.assertEqual(rc, "nameserver 8.8.8.8\n" + "nameserver 3.3.3.3\n")
+
+    def test__generate_config__by_fixed(self):
+        """
+        _generate_config: generate resolv.conf content by fixed dns
+        """
+        # arrange
+        self.bundle.model.db["enableFixed"] = True
+        self.bundle.model.db["fixedDNS"] = ["8.8.8.8", "3.3.3.3"]
+
+        self.bundle.dns_db = []
+        dns = {"source": "eth0",
+               "dns": ["8.8.8.8", "8.8.4.4"]}
+        self.bundle.dns_db.append(dns)
+        dns = {"source": "fixed",
+               "dns": ["8.8.8.8", "3.3.3.3"]}
         self.bundle.dns_db.append(dns)
 
         # act
@@ -264,7 +287,7 @@ class TestDnsClass(unittest.TestCase):
         _generate_config: without dns list
         """
         # arrange
-        self.bundle.model.db = {"interface": "eth0"}
+        self.bundle.model.db = {"source": "eth0"}
 
         # act
         rc = self.bundle._generate_config()
@@ -311,43 +334,63 @@ class TestDnsClass(unittest.TestCase):
         """
         # arrange
         self.bundle.model.db = {
-            "interface": "eth0",
+            "source": "eth0",
             "dns": ["1.1.1.1", "2.2.2.2"]
         }
-        mock_func = Mock(code=200, data=None)
 
         # act
-        self.bundle.get_current_dns(message=None, response=mock_func)
+        data = self.bundle.get_current_dns()
 
         # assert
-        self.assertEqual(len(mock_func.call_args_list), 1)
         self.assertEqual(
-            mock_func.call_args_list[0][1]["data"],
-            {"interface": "eth0", "dns": ["1.1.1.1", "2.2.2.2"]})
+            data,
+            {"enableFixed": False,
+             "source": "eth0",
+             "dns": ["1.1.1.1", "2.2.2.2"]})
 
     @patch.object(Dns, "update_config")
-    def test__set_current_dns__by_interface(self, mock_update_config):
+    def test__set_current_dns__by_fixed(self, mock_update_config):
         """
-        set_current_dns: set by interface
+        set_current_dns: set by fixed
         """
         # arrange
-        dns = {"interface": "eth0",
+        dns = {"source": "eth0",
                "dns": ["8.8.8.8", "8.8.4.4"]}
         self.bundle.dns_db.append(dns)
 
-        dns = {"interface": "eth1",
+        dns = {"source": "eth1",
                "dns": ["1.1.1.1", "2.2.2.2"]}
         self.bundle.dns_db.append(dns)
 
-        message = Message({"data": {"interface": "eth0"}})
-        mock_func = Mock(code=200, data=None)
+        data = {"enableFixed": True, "fixedDNS": ["3.3.3.3", "4.4.4.4"]}
 
         # act
-        self.bundle.set_current_dns(message=message, response=mock_func)
+        self.bundle.set_current_dns(data)
 
         # assert
-        self.assertEqual(
-            mock_func.call_args_list[0][1]["data"], {"interface": "eth0"})
+        mock_update_config.assert_called_once_with()
+
+    @patch.object(Dns, "update_config")
+    def test__set_current_dns__by_source(self, mock_update_config):
+        """
+        set_current_dns: set by source
+        """
+        # arrange
+        dns = {"source": "eth0",
+               "dns": ["8.8.8.8", "8.8.4.4"]}
+        self.bundle.dns_db.append(dns)
+
+        dns = {"source": "eth1",
+               "dns": ["1.1.1.1", "2.2.2.2"]}
+        self.bundle.dns_db.append(dns)
+
+        data = {"source": "eth0"}
+
+        # act
+        self.bundle.set_current_dns(data)
+
+        # assert
+        mock_update_config.assert_called_once_with()
 
     @patch.object(Dns, "update_config")
     def test__set_current_dns__by_dns_list(self, mock_update_config):
@@ -355,15 +398,13 @@ class TestDnsClass(unittest.TestCase):
         set_current_dns: set by DNS list
         """
         # arrange
-        dns = {"dns": ["1.1.1.1", "2.2.2.2", "3.3.3.3"]}
-        message = Message({"data": dns})
-        mock_func = Mock(code=200, data=None)
+        data = {"dns": ["1.1.1.1", "2.2.2.2", "3.3.3.3"]}
 
         # act
-        self.bundle.set_current_dns(message=message, response=mock_func)
+        self.bundle.set_current_dns(data)
 
         # assert
-        self.assertEqual(mock_func.call_args_list[0][1]["data"], dns)
+        mock_update_config.assert_called_once_with()
 
     @patch.object(Dns, "update_config")
     def test__set_current_dns__update_config_failed(self, mock_update_config):
@@ -372,47 +413,18 @@ class TestDnsClass(unittest.TestCase):
         """
         # arrange
         mock_update_config.side_effect = IOError("Write error!")
-        dns = {"dns": ["1.1.1.1", "2.2.2.2", "3.3.3.3"]}
-        message = Message({"data": dns})
-        mock_func = Mock(code=200, data=None)
+        data = {"dns": ["1.1.1.1", "2.2.2.2", "3.3.3.3"]}
 
-        # act
-        self.bundle.set_current_dns(message=message, response=mock_func)
-
-        # assert
-        self.assertEqual(mock_func.call_args_list[0][1]["code"], 400)
+        # act & assert
+        with self.assertRaises(IOError):
+            self.bundle.set_current_dns(data)
 
     def test__set_dns_database__add(self):
         """
         set_dns_database: add to database
         """
         # arrange
-        dns = {"interface": "eth1", "dns": ["1.1.1.1", "2.2.2.2", "3.3.3.3"]}
-        message = Message({"data": dns})
-        mock_func = Mock(code=200, data=None)
-
-        # act
-        self.bundle.set_dns_database(message=message, response=mock_func)
-
-        # assert
-        self.assertEqual(len(mock_func.call_args_list[0][1]["data"]), 1)
-        self.assertEqual(mock_func.call_args_list[0][1]["data"][0], dns)
-
-    @patch.object(Dns, "update_config")
-    def test__set_dns_database__update(self, mock_update_config):
-        """
-        set_dns_database: batch update
-        """
-        # arrange
-        dns1 = {"interface": "eth0", "dns": ["1.1.1.1", "2.2.2.2", "3.3.3.3"]}
-        dns2 = {"interface": "eth1", "dns": ["2.2.2.2", "3.3.3.3"]}
-        self.bundle.dns_db.append(dns1)
-        self.bundle.dns_db.append(dns2)
-
-        dns = [
-            {"interface": "eth0", "dns": ["8.8.8.8", "8.8.4.4"]},
-            {"interface": "eth1", "dns": ["1.1.1.1", "2.2.2.2"]}
-        ]
+        dns = {"source": "eth1", "dns": ["1.1.1.1", "2.2.2.2", "3.3.3.3"]}
         message = Message({"data": dns})
         mock_func = Mock(code=200, data=None)
 
@@ -421,6 +433,32 @@ class TestDnsClass(unittest.TestCase):
 
         # assert
         self.assertEqual(len(mock_func.call_args_list[0][1]["data"]), 2)
+        self.assertEqual(mock_func.call_args_list[0][1]["data"][1], dns)
+
+    @patch.object(Dns, "update_config")
+    def test__set_dns_database__update(self, mock_update_config):
+        """
+        set_dns_database: batch update
+        """
+        # arrange
+        dns1 = {"source": "eth0", "dns": ["1.1.1.1", "2.2.2.2", "3.3.3.3"]}
+        dns2 = {"source": "eth1", "dns": ["2.2.2.2", "3.3.3.3"]}
+        self.bundle.dns_db.append(dns1)
+        self.bundle.dns_db.append(dns2)
+
+        dns = [
+            self.bundle.dns_db[0],
+            {"source": "eth0", "dns": ["8.8.8.8", "8.8.4.4"]},
+            {"source": "eth1", "dns": ["1.1.1.1", "2.2.2.2"]}
+        ]
+        message = Message({"data": dns})
+        mock_func = Mock(code=200, data=None)
+
+        # act
+        self.bundle.set_dns_database(message=message, response=mock_func)
+
+        # assert
+        self.assertEqual(len(mock_func.call_args_list[0][1]["data"]), 3)
         self.assertEqual(mock_func.call_args_list[0][1]["data"], dns)
 
 

@@ -3,6 +3,7 @@
 
 import logging
 import os
+import copy
 from sanji.core import Sanji
 from sanji.core import Route
 from sanji.model_initiator import ModelInitiator
@@ -28,13 +29,15 @@ class Dns(Sanji):
     }, extra=REMOVE_EXTRA)
 
     PUT_DB_SCHEMA = Schema({
-        Required("interface"): All(str, Length(1, 255)),
+        Required("source"): All(str, Length(1, 255)),
         Required("dns"): [Any("", All(str, Length(0, 15)))]
     }, extra=REMOVE_EXTRA)
 
     PUT_DNS_SCHEMA = Schema({
-        Optional("interface"): All(str, Length(1, 255)),
-        Optional("dns"): [Any("", All(str, Length(0, 15)))]
+        Optional("enableFixed"): bool,
+        Optional("source"): All(str, Length(1, 255)),
+        Optional("dns"): [Any("", All(str, Length(0, 15)))],
+        Optional("fixedDNS"): [Any("", All(str, Length(0, 15)))]
     }, extra=REMOVE_EXTRA)
 
     def init(self, *args, **kwargs):
@@ -56,6 +59,10 @@ class Dns(Sanji):
 
         # initialize DNS database
         self.dns_db = []
+        if "fixedDNS" in self.model.db:
+            self.add_dns_list(
+                {"source": "fixed",
+                 "dns": self.model.db["fixedDNS"]})
 
     def run(self):
         try:
@@ -84,65 +91,82 @@ class Dns(Sanji):
         self.model.save_db()
         self.model.backup_db()
 
-    def get_dns_list(self, interface):
+    def get_dns_list(self, source):
         """
-        Get DNS list by interface from database.
+        Get DNS list by source from database.
 
         Args:
-            interface: interface name for the DNS list belongs to.
+            source: source which the DNS list belongs to.
         """
-        for iface in self.dns_db:
-            if interface == iface["interface"]:
-                return iface
+        for entry in self.dns_db:
+            if source == entry["source"]:
+                return entry
         return None
 
-    def add_dns_list(self, dns, update=True):
+    def set_dns_list(self, obj, update=True):
         """
-        Add DNS list by interface into database and update setting if
-        required.
+        Update DNS list by source from database.
 
         Args:
-            dns: a dictionary with "interface" and "dns" list, for example:
+            obj: a dictionary with "source" and "dns" list, for example:
                 {
-                    "interface": "eth0",
+                    "source": "eth0",
                     "dns": ["8.8.8.8", "8.8.4.4"]
                 }
         """
-        iface = self.get_dns_list(dns["interface"])
-        if iface:
-            iface["dns"] = dns["dns"]
-        else:
-            self.dns_db.append(dns)
+        for entry in self.dns_db:
+            if obj["source"] == entry["source"]:
+                entry["dns"] = obj["dns"]
+                return entry
+        return self.add_dns_list(obj, update)
 
-        # update config if data updated
-        if update and "interface" in self.model.db \
-                and dns["interface"] == self.model.db["interface"]:
-            self.update_config()
-
-    def remove_dns_list(self, interface):
+    def add_dns_list(self, obj, update=True):
         """
-        Remove DNS list by interface from database.
+        Add DNS list by source into database and update setting if
+        required.
 
         Args:
-            interface: interface name for the DNS list belongs to.
+            obj: a dictionary with "source" and "dns" list, for example:
+                {
+                    "source": "eth0",
+                    "dns": ["8.8.8.8", "8.8.4.4"]
+                }
+        """
+        entry = self.get_dns_list(obj["source"])
+        if entry:
+            entry["dns"] = obj["dns"]
+        else:
+            self.dns_db.append(obj)
+
+        # update config if data updated
+        if update and "source" in self.model.db \
+                and obj["source"] == self.model.db["source"]:
+            self.update_config()
+
+    def remove_dns_list(self, source):
+        """
+        Remove DNS list by source from database.
+
+        Args:
+            source: source for the DNS list belongs to.
         """
         self.dns_db[:] = \
-            [i for i in self.dns_db if i.get("interface") != interface]
+            [i for i in self.dns_db if i.get("source") != source]
 
     def _generate_config(self):
         """
         Generate /etc/resolv.conf content.
+        Priority:
+            1. fixed DNS
+            2. temporary DNS
+            3. by source
         """
         resolv = ""
-        dns_list = []
-        if "dns" in self.model.db:
-            dns_list = self.model.db["dns"]
-        elif "interface" in self.model.db:
-            dns = self.get_dns_list(self.model.db["interface"])
-            if dns and "dns" in dns:
-                dns_list = dns["dns"]
+        data = self.get_current_dns()
+        if "dns" not in data:
+            return resolv
 
-        for server in dns_list:
+        for server in data["dns"]:
             if server != "":
                 resolv = resolv + ("nameserver %s\n" % server)
         return resolv
@@ -163,38 +187,79 @@ class Dns(Sanji):
         """
         self._write_config(self._generate_config())
 
-    def get_current_dns(self, message, response):
-        return response(data=self.model.db)
+    def get_current_dns(self):
+        """
+        Get current DNS settings, include fixed information.
+            {
+              "enableFixed": false,
+              "fixedDNS": ["8.8.8.8", "8.8.4.4"],
+              "source": "eth0",
+              "dns": ["192.168.50.33", "192.168.50.36"]
+            }
+        """
+        data = copy.deepcopy(self.model.db)
+        if "enableFixed" not in data:
+            data["enableFixed"] = False
+
+        if data["enableFixed"] is True:
+            data["source"] = "fixed"
+        if "source" in data:
+            dns = self.get_dns_list(data["source"])
+            if dns and "dns" in dns:
+                data["dns"] = copy.copy(dns["dns"])
+            elif data["enableFixed"] is True:
+                data["dns"] = data["fixedDNS"]
+        return data
 
     @Route(methods="get", resource="/network/dns")
     def _get_current_dns(self, message, response):
-        return self.get_current_dns(message, response)
+        data = self.get_current_dns()
+        return response(data=data)
 
-    def set_current_dns(self, message, response):
+    def set_current_dns(self, data):
         """
         Update current DNS configuration by message.
         """
-        # add to DNS database if data include both interface and dns list
-        if "interface" in message.data and "dns" in message.data:
-            self.add_dns_list(message.data, False)
+        # add to DNS database if data include both source and dns list
+        # fixed DNS updated later
+        if "source" in data and "dns" in data and data["source"] != "fixed":
+            self.add_dns_list(data, False)
 
         # update settings
-        self.model.db.clear()
-        if "interface" in message.data:
-            self.model.db = {"interface": message.data["interface"]}
-        elif "dns" in message.data:
-            self.model.db = message.data
+        self.model.db.pop("dns", None)
+
+        if "enableFixed" not in self.model.db:
+            self.model.db["enableFixed"] = False
+
+        source = None if "source" not in data else data.pop("source")
+        dnslist = None if "dns" not in data else data.pop("dns")
+        if source and source != "fixed":
+                self.model.db["source"] = source
+        elif source is None and dnslist:
+            self.model.db.pop("source", None)
+            self.model.db["dns"] = dnslist
+
+        self.model.db.update(data)
         self.save()
 
-        try:
-            self.update_config()
-        except Exception as e:
-            return response(code=400, data={"message": e.message})
-        return response(data=self.model.db)
+        # update fixed
+        dns = {}
+        dns["source"] = "fixed"
+        if "fixedDNS" in self.model.db:
+            dns["dns"] = self.model.db["fixedDNS"]
+        else:
+            dns["dns"] = []
+        self.set_dns_list(dns)
+
+        self.update_config()
 
     @Route(methods="put", resource="/network/dns")
     def _put_current_dns(self, message, response, schema=PUT_DNS_SCHEMA):
-        return self.set_current_dns(message, response)
+        try:
+            self.set_current_dns(message.data)
+        except Exception as e:
+            return response(code=400, data={"message": e.message})
+        return response(data=message.data)
 
     @Route(methods="get", resource="/network/dns/db")
     def _get_dns_database(self, message, response):
@@ -202,7 +267,7 @@ class Dns(Sanji):
 
     def set_dns_database(self, message, response):
         """
-        Update DNS database batch or by interface.
+        Update DNS database batch or by source.
         """
         if type(message.data) is list:
             for dns in message.data:
@@ -233,7 +298,7 @@ class Dns(Sanji):
         _logger.debug("[/network/interface] interface: %s, dns: %s"
                       % (message.data["name"], message.data["dns"]))
 
-        dns = {"interface": message.data["name"],
+        dns = {"source": message.data["name"],
                "dns": message.data["dns"]}
         self.add_dns_list(dns)
 
