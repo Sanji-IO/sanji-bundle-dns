@@ -253,8 +253,8 @@ class Dns(Sanji):
 
         self.update_config()
 
-    @Route(methods="put", resource="/network/dns")
-    def _put_current_dns(self, message, response, schema=PUT_DNS_SCHEMA):
+    @Route(methods="put", resource="/network/dns", schema=PUT_DNS_SCHEMA)
+    def _put_current_dns(self, message, response):
         try:
             self.set_current_dns(message.data)
         except Exception as e:
