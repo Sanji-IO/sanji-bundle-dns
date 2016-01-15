@@ -1,3 +1,9 @@
+sanji-bundle-dns (0.10.3-1) unstable; urgency=low
+
+  * Bugfix: Route schema.
+
+ -- Zack YL Shih <zackyl.shih@moxa.com>  Fri, 15 Jan 2016 17:54:23 +0800
+
 sanji-bundle-dns (0.10.2-1) unstable; urgency=low
 
   * Bugfix: always fixed after enable fixed DNS.
