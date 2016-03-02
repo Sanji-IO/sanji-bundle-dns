@@ -283,7 +283,7 @@ class Dns(Sanji):
     def _put_dns_database(self, message, response):
         return self.set_dns_database(message, response)
 
-    @Route(methods="put", resource="/network/interface")
+    @Route(methods="put", resource="/network/interfaces/:name")
     def _event_network_interface(self, message):
         """
         Listen interface event to update the dns database and settings.
@@ -295,12 +295,22 @@ class Dns(Sanji):
         except Exception as e:
             raise e
 
-        _logger.debug("[/network/interface] interface: %s, dns: %s"
-                      % (message.data["name"], message.data["dns"]))
+        _logger.debug("[/network/interfaces] interface: %s, dns: %s"
+                      % (message.param["name"], message.data["dns"]))
 
-        dns = {"source": message.data["name"],
+        dns = {"source": message.param["name"],
                "dns": message.data["dns"]}
         self.add_dns_list(dns)
+
+    @Route(methods="put", resource="/network/wan")
+    def _event_network_wan(self, message):
+        """
+        Listen wan event to update the dns settings.
+        """
+        try:
+            self.set_current_dns({"source": message.data["interface"]})
+        except Exception as e:
+            _logger.debug("[/network/wan] %s".format(e.message))
 
 
 def main():
@@ -310,5 +320,6 @@ def main():
 if __name__ == '__main__':
     FORMAT = '%(asctime)s - %(levelname)s - %(lineno)s - %(message)s'
     logging.basicConfig(level=0, format=FORMAT)
+    logging.getLogger("sh").setLevel(logging.WARN)
     _logger = logging.getLogger("sanji.dns")
     main()
