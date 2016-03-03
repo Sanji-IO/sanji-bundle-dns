@@ -35,8 +35,6 @@ class Dns(Sanji):
 
     PUT_DNS_SCHEMA = Schema({
         Optional("enableFixed"): bool,
-        Optional("source"): All(str, Length(1, 255)),
-        Optional("dns"): [Any("", All(str, Length(0, 15)))],
         Optional("fixedDNS"): [Any("", All(str, Length(0, 15)))]
     }, extra=REMOVE_EXTRA)
 
@@ -310,7 +308,7 @@ class Dns(Sanji):
         try:
             self.set_current_dns({"source": message.data["interface"]})
         except Exception as e:
-            _logger.debug("[/network/wan] %s".format(e.message))
+            _logger.info("[/network/wan] %s".format(e.message))
 
 
 def main():
