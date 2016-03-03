@@ -19,11 +19,11 @@ paths:
         200:
           description: DNS
           schema:
-            $ref: '#/definitions/DNS_GET'
+            $ref: '#/definitions/DNS'
           examples:
             {
               "application/json": {
-                $ref: '#/externalDocs/x-mocks/DNS_GET'
+                $ref: '#/externalDocs/x-mocks/DNS'
               }
             }
     put:
@@ -33,21 +33,22 @@ paths:
         200:
           description: OK
           schema:
-            $ref: '#/definitions/DNS_PUT'
+            $ref: '#/definitions/DNS'
           examples:
             {
               "application/json": {
-                $ref: '#/externalDocs/x-mocks/DNS_PUT'
+                $ref: '#/externalDocs/x-mocks/DNS'
               }
             }
 definitions:
-  DNS_GET:
-    title: DNS_GET
+  DNS:
+    title: DNS
     required:
     - enableFixed
     properties:
       source:
         type: string
+        readOnly: true
         description: |
           the current dns corresponging source (maybe network interface or
           `fixed` DNS)
@@ -56,6 +57,7 @@ definitions:
         items:
           type: string
           pattern: ^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$
+        readOnly: true
         description: Current DNS setting.
       enableFixed:
         type: boolean
@@ -69,30 +71,12 @@ definitions:
         description: |
           DNS settings if enableFixed is `true`.
     example:
-          $ref: '#/externalDocs/x-mocks/DNS_GET'
-  DNS_PUT:
-    title: DNS_PUT
-    required:
-      - enableFixed
-    properties:
-      enableFixed:
-        type: boolean
-        description: |
-          Using fixed DNS (true) or by interface (false), false if not given.
-      fixedDNS:
-        type: array
-        items:
-          type: string
-          pattern: ^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$
-        description: |
-          DNS settings if enableFixed is `true`.
-    example:
-          $ref: '#/externalDocs/x-mocks/DNS_PUT'
+          $ref: '#/externalDocs/x-mocks/DNS'
 
 externalDocs:
   url: '#'
   x-mocks:
-    DNS_GET:
+    DNS:
       {
         "enableFixed": false,
         "fixedDNS": [],
@@ -101,9 +85,4 @@ externalDocs:
           "8.8.8.8",
           "8.8.4.4",
         ]
-      }
-    DNS_PUT:
-      {
-        "enableFixed": false,
-        "fixedDNS": [],
       }
