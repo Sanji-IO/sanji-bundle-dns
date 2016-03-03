@@ -2,7 +2,7 @@ swagger: '2.0'
 info:
   title: DNS API
   description: Handle the DNS settings
-  version: "0.11.1"
+  version: "0.11.0"
 
 schemes:
   - http
@@ -44,7 +44,7 @@ definitions:
   DNS_GET:
     title: DNS_GET
     required:
-      - enableFixed
+    - enableFixed
     properties:
       source:
         type: string
