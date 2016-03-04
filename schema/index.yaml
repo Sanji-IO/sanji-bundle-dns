@@ -56,15 +56,15 @@ definitions:
         type: string
         readOnly: true
         description: |
-          the current dns corresponging source (maybe network interface or
-          `fixed` DNS)
+          The current dns corresponging source, may be a network interface or
+          `fixed` for fixed DNS (readonly)
       dns:
         type: array
         items:
           type: string
           pattern: ^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$
         readOnly: true
-        description: Current DNS setting.
+        description: Current DNS setting(s) (readonly).
       enableFixed:
         type: boolean
         description: |
