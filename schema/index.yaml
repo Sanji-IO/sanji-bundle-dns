@@ -27,6 +27,12 @@ paths:
               }
             }
     put:
+      parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/DNS'
       summary: Update DNS settings
       description: Update DNS settings by interface or using fixed DNS.
       responses:
