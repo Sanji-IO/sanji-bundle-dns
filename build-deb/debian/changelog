@@ -1,3 +1,21 @@
+sanji-bundle-dns (0.10.3-1) unstable; urgency=low
+
+  * Bugfix: Route schema.
+
+ -- Zack YL Shih <zackyl.shih@moxa.com>  Fri, 15 Jan 2016 17:54:23 +0800
+
+sanji-bundle-dns (0.10.2-1) unstable; urgency=low
+
+  * Bugfix: always fixed after enable fixed DNS.
+
+ -- Aeluin Chen <aeluin.chen@moxa.com>  Thu, 03 Dec 2015 18:22:40 +0800
+
+sanji-bundle-dns (0.10.1-1) unstable; urgency=low
+
+  * Support fixed DNS.
+
+ -- Aeluin Chen <aeluin.chen@moxa.com>  Thu, 03 Dec 2015 14:24:53 +0800
+
 sanji-bundle-dns (0.9.6-1) unstable; urgency=low
 
   * Fixes #9, empty DNS cause setting with "nameserver ".
