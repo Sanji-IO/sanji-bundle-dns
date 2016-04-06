@@ -69,7 +69,7 @@ definitions:
         type: boolean
         description: |
           Using fixed DNS (true) or by interface (false), false if not given.
-      fixedDNS:
+      fixedDns:
         type: array
         items:
           type: string
@@ -85,7 +85,7 @@ externalDocs:
     DNS:
       {
         "enableFixed": false,
-        "fixedDNS": [],
+        "fixedDns": [],
         "source": "eth0",
         "dns": [
           "8.8.8.8",

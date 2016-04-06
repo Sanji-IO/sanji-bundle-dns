@@ -1,5 +1,5 @@
 {
 	"enableFixed": false,
-	"fixedDNS": [],
+	"fixedDns": [],
 	"source": "eth0"
 }
