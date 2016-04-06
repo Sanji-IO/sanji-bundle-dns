@@ -35,7 +35,7 @@ class Dns(Sanji):
 
     PUT_DNS_SCHEMA = Schema({
         Optional("enableFixed"): bool,
-        Optional("fixedDNS"): [Any("", All(str, Length(0, 15)))]
+        Optional("fixedDns"): [Any("", All(str, Length(0, 15)))]
     }, extra=REMOVE_EXTRA)
 
     def init(self, *args, **kwargs):
@@ -57,10 +57,10 @@ class Dns(Sanji):
 
         # initialize DNS database
         self.dns_db = []
-        if "fixedDNS" in self.model.db:
+        if "fixedDns" in self.model.db:
             self.add_dns_list(
                 {"source": "fixed",
-                 "dns": self.model.db["fixedDNS"]})
+                 "dns": self.model.db["fixedDns"]})
 
     def run(self):
         try:
@@ -190,7 +190,7 @@ class Dns(Sanji):
         Get current DNS settings, include fixed information.
             {
               "enableFixed": false,
-              "fixedDNS": ["8.8.8.8", "8.8.4.4"],
+              "fixedDns": ["8.8.8.8", "8.8.4.4"],
               "source": "eth0",
               "dns": ["192.168.50.33", "192.168.50.36"]
             }
@@ -206,7 +206,7 @@ class Dns(Sanji):
             if dns and "dns" in dns:
                 data["dns"] = copy.copy(dns["dns"])
             elif data["enableFixed"] is True:
-                data["dns"] = data["fixedDNS"]
+                data["dns"] = data["fixedDns"]
         return data
 
     @Route(methods="get", resource="/network/dns")
@@ -243,8 +243,8 @@ class Dns(Sanji):
         # update fixed
         dns = {}
         dns["source"] = "fixed"
-        if "fixedDNS" in self.model.db:
-            dns["dns"] = self.model.db["fixedDNS"]
+        if "fixedDns" in self.model.db:
+            dns["dns"] = self.model.db["fixedDns"]
         else:
             dns["dns"] = []
         self.set_dns_list(dns)

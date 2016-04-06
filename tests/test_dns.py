@@ -266,7 +266,7 @@ class TestDnsClass(unittest.TestCase):
         """
         # arrange
         self.bundle.model.db["enableFixed"] = True
-        self.bundle.model.db["fixedDNS"] = ["8.8.8.8", "3.3.3.3"]
+        self.bundle.model.db["fixedDns"] = ["8.8.8.8", "3.3.3.3"]
 
         self.bundle.dns_db = []
         dns = {"source": "eth0",
@@ -362,7 +362,7 @@ class TestDnsClass(unittest.TestCase):
                "dns": ["1.1.1.1", "2.2.2.2"]}
         self.bundle.dns_db.append(dns)
 
-        data = {"enableFixed": True, "fixedDNS": ["3.3.3.3", "4.4.4.4"]}
+        data = {"enableFixed": True, "fixedDns": ["3.3.3.3", "4.4.4.4"]}
 
         # act
         self.bundle.set_current_dns(data)
