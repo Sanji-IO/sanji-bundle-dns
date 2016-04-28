@@ -3,7 +3,7 @@
   "version": "0.10.3",
   "author": "Aeluin Chen",
   "email": "aeluin.chen@moxa.com",
-  "description": "Handle the dns settings.",
+  "description": "Handles the system DNS settings",
   "license": "MOXA",
   "main": "dns.py",
   "argument": "",
