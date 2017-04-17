@@ -1,0 +1,94 @@
+swagger: '2.0'
+info:
+  title: DNS API
+  description: Handle the DNS settings
+  version: "0.11.0"
+
+schemes:
+  - http
+  - https
+produces:
+  - application/json
+paths:
+  /network/dns:
+    get:
+      summary: Information of Current DNS settings
+      description: |
+        List all current DNS and DNS source.
+      responses:
+        200:
+          description: DNS
+          schema:
+            $ref: '#/definitions/DNS'
+          examples:
+            {
+              "application/json": {
+                $ref: '#/externalDocs/x-mocks/DNS'
+              }
+            }
+    put:
+      parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/DNS'
+      summary: Update DNS settings
+      description: Update DNS settings by interface or using fixed DNS.
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/DNS'
+          examples:
+            {
+              "application/json": {
+                $ref: '#/externalDocs/x-mocks/DNS'
+              }
+            }
+definitions:
+  DNS:
+    title: DNS
+    required:
+    - enableFixed
+    properties:
+      source:
+        type: string
+        readOnly: true
+        description: |
+          The current dns corresponging source, may be a network interface or
+          `fixed` for fixed DNS (readonly)
+      dns:
+        type: array
+        items:
+          type: string
+          pattern: ^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$
+        readOnly: true
+        description: Current DNS setting(s) (readonly).
+      enableFixed:
+        type: boolean
+        description: |
+          Using fixed DNS (true) or by interface (false), false if not given.
+      fixedDns:
+        type: array
+        items:
+          type: string
+          pattern: ^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$
+        description: |
+          DNS settings if enableFixed is `true`.
+    example:
+          $ref: '#/externalDocs/x-mocks/DNS'
+
+externalDocs:
+  url: '#'
+  x-mocks:
+    DNS:
+      {
+        "enableFixed": false,
+        "fixedDns": [],
+        "source": "eth0",
+        "dns": [
+          "8.8.8.8",
+          "8.8.4.4",
+        ]
+      }

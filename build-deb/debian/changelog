@@ -1,3 +1,16 @@
+sanji-bundle-dns (1.0.0) unstable; urgency=low
+
+  * Use `fixedDns` instead of `fixedDNS`.
+
+ -- Aeluin Chen <aeluin.chen@moxa.com>  Wed, 06 Apr 2016 13:48:07 +0800
+
+sanji-bundle-dns (0.11.0-1) unstable; urgency=low
+
+  * Add OAPI schema.
+  * Support `/network/wan` event.
+
+ -- Aeluin Chen <aeluin.chen@moxa.com>  Wed, 02 Mar 2016 17:12:55 +0800
+
 sanji-bundle-dns (0.10.3-1) unstable; urgency=low
 
   * Bugfix: Route schema.

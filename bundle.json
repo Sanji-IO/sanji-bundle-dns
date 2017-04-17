@@ -1,9 +1,9 @@
 {
   "name": "dns",
-  "version": "0.10.3",
+  "version": "1.0.0",
   "author": "Aeluin Chen",
   "email": "aeluin.chen@moxa.com",
-  "description": "Handle the dns settings.",
+  "description": "Handles the system DNS settings",
   "license": "MOXA",
   "main": "dns.py",
   "argument": "",
@@ -25,7 +25,11 @@
     },
     {
       "role": "view",
-      "resource": "/network/interface"
+      "resource": "/network/interfaces/:name"
+    },
+    {
+      "role": "view",
+      "resource": "/network/wan"
     }
   ]
 }
