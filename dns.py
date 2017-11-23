@@ -24,18 +24,18 @@ class Dns(Sanji):
     CONFIG_PATH = "/etc/resolv.conf"
 
     IFACE_SCHEMA = Schema({
-        Required("name"): All(str, Length(1, 255)),
-        Required("dns"): [Any("", All(str, Length(0, 15)))]
+        Required("name"): All(basestring, Length(1, 255)),
+        Required("dns"): [Any("", All(basestring, Length(0, 15)))]
     }, extra=REMOVE_EXTRA)
 
     PUT_DB_SCHEMA = Schema({
-        Required("source"): All(str, Length(1, 255)),
-        Required("dns"): [Any("", All(str, Length(0, 15)))]
+        Required("source"): All(basestring, Length(1, 255)),
+        Required("dns"): [Any("", All(basestring, Length(0, 15)))]
     }, extra=REMOVE_EXTRA)
 
     PUT_DNS_SCHEMA = Schema({
         Optional("enableFixed"): bool,
-        Optional("fixedDns"): [Any("", All(str, Length(0, 15)))]
+        Optional("fixedDns"): [Any("", All(basestring, Length(0, 15)))]
     }, extra=REMOVE_EXTRA)
 
     def init(self, *args, **kwargs):
