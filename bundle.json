@@ -1,6 +1,6 @@
 {
   "name": "dns",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Aeluin Chen",
   "email": "aeluin.chen@moxa.com",
   "description": "Handle the dns settings.",

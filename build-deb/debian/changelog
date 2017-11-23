@@ -1,3 +1,9 @@
+sanji-bundle-dns (1.0.1) unstable; urgency=low
+
+  * fix: Use `basestring` instead of `str`.
+
+ -- Aeluin Chen <aeluin.chen@moxa.com>  Thu, 23 Nov 2017 15:16:04 +0800
+
 sanji-bundle-dns (1.0.0) unstable; urgency=low
 
   * Use `fixedDns` instead of `fixedDNS`.
